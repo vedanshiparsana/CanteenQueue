@@ -10,6 +10,7 @@ const menuRoutes = require("./routes/menuRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const kitchenRoutes = require("./routes/kitchenRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const walletRoutes = require("./routes/walletRoutes");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/wallet", walletRoutes);
 
 const PORT = process.env.PORT || 5000;
 
