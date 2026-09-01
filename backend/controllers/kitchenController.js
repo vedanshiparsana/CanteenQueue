@@ -1,4 +1,8 @@
 const Order = require("../models/Order");
+const {
+    getIO,
+    sendNotification
+} = require("../config/socket");
 
 // Get active kitchen orders
 const getKitchenOrders = async (req, res) => {
@@ -60,6 +64,28 @@ const updateOrderStatus = async (req, res) => {
             });
         }
 
+        // Socket.IO: notify all connected clients
+        const io = getIO();
+
+        io.emit("order:statusUpdated", {
+            orderId: order.orderId,
+            orderStatus: order.orderStatus
+        });
+
+        // Socket.IO: notify when order is ready
+        if (order.orderStatus === "Ready") {
+            io.emit("order:ready", {
+                orderId: order.orderId
+            });
+        }
+
+        if (order.orderStatus === "Ready") {
+    sendNotification(
+        order.userId,
+        `Your order ${order.orderId} is ready for pickup`
+    );
+}
+
         res.status(200).json({
             success: true,
             message: "Order status updated successfully",
@@ -75,6 +101,7 @@ const updateOrderStatus = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     getKitchenOrders,

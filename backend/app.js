@@ -12,8 +12,36 @@ const kitchenRoutes = require("./routes/kitchenRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const {
+    sendPickupReminders
+} = require("./controllers/notificationController");
+
+const http = require("http");
+const { Server } = require("socket.io");
+const { setIO } = require("./config/socket");
 
 const app = express();
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Create Socket.IO server
+const io = new Server(server, {
+    cors: {
+        origin: "*"
+    }
+});
+
+setIO(io);
+
+// Socket.IO connection
+io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+    });
+});
 
 app.use(cors());
 app.use(express.json());
@@ -37,6 +65,11 @@ app.use("/api/analytics", analyticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// IMPORTANT: use server.listen, NOT app.listen
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+setInterval(() => {
+    sendPickupReminders();
+}, 60 * 1000);
