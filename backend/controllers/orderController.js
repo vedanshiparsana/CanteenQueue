@@ -274,6 +274,122 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+const updatePickupSlot = async (req, res) => {
+    try {
+        const { date, startTime, endTime } = req.body;
+
+        if (!date || !startTime || !endTime) {
+            return res.status(400).json({
+                success: false,
+                message: "Date, start time and end time are required"
+            });
+        }
+
+        // Validate time format: HH:MM
+        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+        if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+            return res.status(400).json({
+                success: false,
+                message: "Time must be in HH:MM format"
+            });
+        }
+
+        // Start time must be before end time
+        if (startTime >= endTime) {
+            return res.status(400).json({
+                success: false,
+                message: "Start time must be before end time"
+            });
+        }
+
+        const pickupDate = new Date(date);
+
+        if (isNaN(pickupDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pickup date"
+            });
+        }
+
+        // Prevent scheduling in the past
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        pickupDate.setHours(0, 0, 0, 0);
+
+        if (pickupDate < today) {
+            return res.status(400).json({
+                success: false,
+                message: "Pickup date cannot be in the past"
+            });
+        }
+
+        const order = await Order.findOne({
+            orderId: req.params.id
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+
+        // Only the owner of the order can schedule the pickup
+        const user = await User.findOne({
+            userId: req.user.userId
+        });
+
+        if (!user || order.userId.toString() !== user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to modify this order"
+            });
+        }
+
+        // Do not allow changing pickup after preparation
+        if (
+            order.orderStatus === "Preparing" ||
+            order.orderStatus === "Ready" ||
+            order.orderStatus === "Completed" ||
+            order.orderStatus === "Cancelled"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Pickup slot cannot be changed at this stage"
+            });
+        }
+
+        order.pickupSlot = {
+            date: pickupDate,
+            startTime,
+            endTime
+        };
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Pickup slot scheduled successfully",
+            data: {
+                orderId: order.orderId,
+                pickupSlot: order.pickupSlot
+            }
+        });
+
+    } catch (error) {
+        console.error("Update pickup slot error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to schedule pickup slot",
+            error: error.message
+        });
+    }
+};
+
+
 const cancelOrder = async (req, res) => {
     try {
 
@@ -334,5 +450,6 @@ module.exports = {
     getOrderById,
     getAllOrders,
     updateOrderStatus,
-    cancelOrder
+    cancelOrder,
+    updatePickupSlot
 };

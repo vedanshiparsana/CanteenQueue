@@ -6,7 +6,8 @@ const {
     getOrderById,
     getAllOrders,
     updateOrderStatus,
-    cancelOrder
+    cancelOrder,
+    updatePickupSlot
 } = require("../controllers/orderController");
 
 const authenticateUser = require("../middleware/authMiddleware");
@@ -61,5 +62,16 @@ router.put(
     cancelOrder
 );
 
+router.put(
+    "/:id/pickup-slot",
+    authenticateUser,
+    updatePickupSlot
+);
+
+router.get(
+    "/:id",
+    authenticateUser,
+    getOrderById
+);
 
 module.exports = router;
