@@ -12,6 +12,8 @@ const kitchenRoutes = require("./routes/kitchenRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const groupOrderRoutes = require("./routes/groupOrderRoutes");
+
 const {
     sendPickupReminders
 } = require("./controllers/notificationController");
@@ -62,6 +64,7 @@ app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/group-orders", groupOrderRoutes);
 
 const PORT = process.env.PORT || 5000;
 
