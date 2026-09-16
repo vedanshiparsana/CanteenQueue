@@ -1,42 +1,35 @@
 const express = require("express");
 
 const {
-    createInventoryItem,
-    getInventoryItems,
-    updateInventoryItem,
-    deleteInventoryItem
-} = require("../controllers/inventoryController");
+    getActiveAlerts,
+    getAllAlerts,
+    resolveAlert
+} = require("../controllers/inventoryAlertController");
 
 const authenticateUser = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-router.post(
-    "/",
-    authenticateUser,
-    authorizeRoles("admin"),
-    createInventoryItem
-);
-
 router.get(
     "/",
     authenticateUser,
-    getInventoryItems
+    authorizeRoles("admin"),
+    getActiveAlerts
+);
+
+router.get(
+    "/all",
+    authenticateUser,
+    authorizeRoles("admin"),
+    getAllAlerts
 );
 
 router.put(
-    "/:id",
+    "/:id/resolve",
     authenticateUser,
     authorizeRoles("admin"),
-    updateInventoryItem
-);
-
-router.delete(
-    "/:id",
-    authenticateUser,
-    authorizeRoles("admin"),
-    deleteInventoryItem
+    resolveAlert
 );
 
 module.exports = router;

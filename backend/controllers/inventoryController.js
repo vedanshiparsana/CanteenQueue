@@ -1,4 +1,5 @@
-const Inventory = require("../models/inventory");
+const Inventory = require("../models/Inventory");
+const InventoryAlert = require("../models/InventoryAlert");
 
 // Create inventory item
 const createInventoryItem = async (req, res) => {
@@ -21,6 +22,17 @@ const createInventoryItem = async (req, res) => {
             unitType
         });
 
+        if (currentStockCount <= 5) {
+            await InventoryAlert.create({
+                itemId,
+                itemName,
+                alertType: currentStockCount === 0
+                    ? "OUT_OF_STOCK"
+                    : "LOW_STOCK",
+                currentStock: currentStockCount
+            });
+        }
+
         res.status(201).json({
             success: true,
             message: "Inventory item created successfully",
@@ -36,7 +48,6 @@ const createInventoryItem = async (req, res) => {
         });
     }
 };
-
 
 // Get all inventory items
 const getInventoryItems = async (req, res) => {
@@ -79,6 +90,46 @@ const updateInventoryItem = async (req, res) => {
             });
         }
 
+        // Check stock level
+        if (item.currentStockCount <= 5) {
+
+            const alertType = item.currentStockCount === 0
+                ? "OUT_OF_STOCK"
+                : "LOW_STOCK";
+
+            // Remove old active alert
+            await InventoryAlert.updateMany(
+                {
+                    itemId: item.itemId,
+                    status: "ACTIVE"
+                },
+                {
+                    status: "RESOLVED"
+                }
+            );
+
+            // Create new alert
+            await InventoryAlert.create({
+                itemId: item.itemId,
+                itemName: item.itemName,
+                alertType,
+                currentStock: item.currentStockCount
+            });
+
+        } else {
+
+            // Stock is sufficient, resolve active alerts
+            await InventoryAlert.updateMany(
+                {
+                    itemId: item.itemId,
+                    status: "ACTIVE"
+                },
+                {
+                    status: "RESOLVED"
+                }
+            );
+        }
+
         res.status(200).json({
             success: true,
             message: "Inventory item updated successfully",
@@ -94,7 +145,6 @@ const updateInventoryItem = async (req, res) => {
         });
     }
 };
-
 
 // Delete inventory item
 const deleteInventoryItem = async (req, res) => {

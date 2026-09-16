@@ -13,6 +13,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const groupOrderRoutes = require("./routes/groupOrderRoutes");
+const inventoryAlertRoutes = require("./routes/inventoryAlertRoutes");
 
 const {
     sendPickupReminders
@@ -65,6 +66,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/group-orders", groupOrderRoutes);
+app.use("/api/inventory-alerts", inventoryAlertRoutes);
 
 const PORT = process.env.PORT || 5000;
 
