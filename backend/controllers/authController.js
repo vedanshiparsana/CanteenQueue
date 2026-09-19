@@ -2,9 +2,17 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
+// Register User
 const registerUser = async (req, res) => {
     try {
-        const { userId, name, email, password, phone_no, role } = req.body;
+        const {
+            userId,
+            name,
+            email,
+            password,
+            phone_no
+        } = req.body;
 
         // Check required fields
         if (!userId || !name || !email || !password) {
@@ -37,14 +45,15 @@ const registerUser = async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
+        // Create user
+        // Public registration always creates a student
         const user = await User.create({
             userId,
             name,
             email,
             password: hashedPassword,
             phone_no,
-            role: role || "student"
+            role: "student"
         });
 
         return res.status(201).json({
@@ -71,7 +80,7 @@ const registerUser = async (req, res) => {
 };
 
 
-
+// Login User
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -119,17 +128,17 @@ const loginUser = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign(
-    {
-        id: user._id,
-        userId: user.userId,
-        email: user.email,
-        role: user.role
-    },
-    process.env.JWT_SECRET,
-    {
-        expiresIn: process.env.JWT_EXPIRES_IN || "7d"
-    }
-);
+            {
+                id: user._id,
+                userId: user.userId,
+                email: user.email,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: process.env.JWT_EXPIRES_IN || "7d"
+            }
+        );
 
         return res.status(200).json({
             success: true,

@@ -1,50 +1,56 @@
 const express = require("express");
 
 const {
-    getMenuItems,
-    createMenuItem,
-    updateMenuItem,
-    deleteMenuItem
-} = require("../controllers/menuController");
+    getAllUsers,
+    getUserById,
+    updateUserRole,
+    deleteUser
+} = require("../controllers/userController");
 
 const authenticateUser = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// Get menu
-// Available to authenticated users
+
+// Get all users
+// Admin only
 router.get(
     "/",
     authenticateUser,
-    getMenuItems
-);
-
-// Create menu item
-// Admin only
-router.post(
-    "/",
-    authenticateUser,
     authorizeRoles("admin"),
-    createMenuItem
+    getAllUsers
 );
 
-// Update menu item / price
+
+// Get single user
 // Admin only
-router.put(
+router.get(
     "/:id",
     authenticateUser,
     authorizeRoles("admin"),
-    updateMenuItem
+    getUserById
 );
 
-// Delete menu item
+
+// Update user role
+// Admin only
+router.put(
+    "/:id/role",
+    authenticateUser,
+    authorizeRoles("admin"),
+    updateUserRole
+);
+
+
+// Delete user
 // Admin only
 router.delete(
     "/:id",
     authenticateUser,
     authorizeRoles("admin"),
-    deleteMenuItem
+    deleteUser
 );
+
 
 module.exports = router;
