@@ -1,0 +1,642 @@
+/* =========================================================
+   CanteenQueue - Wallet Page
+   Coral + Forest Green Theme
+   ========================================================= */
+
+/* ---------- Main Page ---------- */
+
+.wallet-page {
+    min-height: 100vh;
+    padding: 50px 24px 70px;
+    background:
+        radial-gradient(circle at top left, rgba(242, 140, 123, 0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(47, 107, 79, 0.14), transparent 30%),
+        #fffdf8;
+    color: #24342b;
+    box-sizing: border-box;
+}
+
+.wallet-container {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+}
+
+
+/* ---------- Heading ---------- */
+
+.wallet-heading {
+    margin-bottom: 32px;
+}
+
+.wallet-eyebrow {
+    margin: 0 0 10px;
+    color: #2f6b4f;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.wallet-heading h1 {
+    margin: 0;
+    font-size: clamp(38px, 6vw, 64px);
+    line-height: 1;
+    letter-spacing: -2px;
+    color: #24342b;
+    font-weight: 900;
+}
+
+.wallet-heading h1 span {
+    color: #ef8978;
+}
+
+.wallet-heading > p:last-child {
+    max-width: 650px;
+    margin: 18px 0 0;
+    color: #607067;
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+
+/* ---------- Loading ---------- */
+
+.wallet-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fffdf8;
+    color: #2f6b4f;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+
+/* ---------- Messages ---------- */
+
+.wallet-message {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.wallet-message.success {
+    background: #e8f5ed;
+    color: #28664b;
+    border-color: #b9dfc7;
+}
+
+.wallet-message.error {
+    background: #fff0ed;
+    color: #c95543;
+    border-color: #f4b9ae;
+}
+
+
+/* ---------- Wallet Card ---------- */
+
+.wallet-card {
+    position: relative;
+    overflow: hidden;
+    padding: 32px;
+    margin-bottom: 32px;
+    border-radius: 28px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2f7657 0%,
+            #28664b 55%,
+            #245b44 100%
+        );
+
+    color: white;
+
+    box-shadow:
+        0 24px 60px rgba(47, 107, 79, 0.22);
+
+    min-height: 210px;
+    box-sizing: border-box;
+}
+
+/* Decorative circles */
+
+.wallet-card::before {
+    content: "";
+    position: absolute;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    right: -80px;
+    top: -100px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.wallet-card::after {
+    content: "";
+    position: absolute;
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    right: 80px;
+    bottom: -120px;
+    background: rgba(239, 137, 120, 0.18);
+}
+
+.wallet-card-top {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.wallet-label {
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.wallet-card h1 {
+    margin: 0;
+    color: white;
+    font-size: clamp(38px, 6vw, 58px);
+    line-height: 1;
+    letter-spacing: -2px;
+    font-weight: 900;
+}
+
+.wallet-icon {
+    width: 62px;
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background: #ef8978;
+    color: white;
+
+    font-size: 30px;
+    font-weight: 900;
+
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+.wallet-user {
+    position: relative;
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    margin-top: 40px;
+}
+
+.wallet-user span {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+.wallet-user strong {
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+
+/* ---------- Sections Grid ---------- */
+
+.wallet-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.wallet-section {
+    position: relative;
+
+    padding: 28px;
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, 0.9);
+
+    border: 1px solid #e8e9e4;
+
+    box-shadow:
+        0 10px 30px rgba(36, 52, 43, 0.07);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+
+    box-sizing: border-box;
+}
+
+.wallet-section:hover {
+    transform: translateY(-4px);
+
+    border-color: rgba(47, 107, 79, 0.25);
+
+    box-shadow:
+        0 18px 40px rgba(36, 52, 43, 0.11);
+}
+
+.wallet-section:nth-child(3) {
+    grid-column: 1 / -1;
+}
+
+
+/* ---------- Section Icons ---------- */
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 18px;
+
+    border-radius: 15px;
+
+    background: #fff0ed;
+    color: #ef8978;
+
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.section-icon.pay {
+    background: #e8f5ed;
+    color: #2f7657;
+}
+
+.section-icon.refund {
+    background: #eef3ef;
+    color: #28664b;
+}
+
+
+/* ---------- Section Text ---------- */
+
+.wallet-section h2 {
+    margin: 0 0 8px;
+
+    color: #24342b;
+
+    font-size: 26px;
+    line-height: 1.2;
+
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.wallet-section p {
+    margin: 0 0 24px;
+
+    color: #6a776f;
+
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+
+/* ---------- Labels ---------- */
+
+.wallet-section label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #35453c;
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+
+/* ---------- Amount Input ---------- */
+
+.amount-input {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+
+    margin-bottom: 12px;
+
+    border: 2px solid #e4e7e2;
+    border-radius: 14px;
+
+    background: #fff;
+
+    overflow: hidden;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+
+    box-sizing: border-box;
+}
+
+.amount-input:focus-within {
+    border-color: #2f7657;
+
+    box-shadow:
+        0 0 0 4px rgba(47, 118, 87, 0.10);
+}
+
+.amount-input span {
+    padding-left: 16px;
+
+    color: #2f7657;
+
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.amount-input input {
+    width: 100%;
+
+    padding: 14px 14px;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    color: #24342b;
+
+    font-size: 16px;
+    font-weight: 600;
+
+    box-sizing: border-box;
+}
+
+.amount-input input::placeholder {
+    color: #a2aaa5;
+}
+
+
+/* ---------- Normal Input ---------- */
+
+.normal-input {
+    width: 100%;
+
+    padding: 14px 16px;
+
+    margin-bottom: 14px;
+
+    border: 2px solid #e4e7e2;
+    border-radius: 14px;
+
+    outline: none;
+
+    background: white;
+
+    color: #24342b;
+
+    font-size: 16px;
+    font-weight: 600;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.normal-input:focus {
+    border-color: #2f7657;
+
+    box-shadow:
+        0 0 0 4px rgba(47, 118, 87, 0.10);
+}
+
+.normal-input::placeholder {
+    color: #a2aaa5;
+}
+
+
+/* ---------- Quick Amount Buttons ---------- */
+
+.quick-amounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-bottom: 18px;
+}
+
+.quick-amounts button {
+    padding: 8px 14px;
+
+    border: 1px solid #dce5df;
+    border-radius: 10px;
+
+    background: #f3f8f5;
+    color: #2f7657;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.quick-amounts button:hover {
+    background: #2f7657;
+    color: white;
+
+    transform: translateY(-2px);
+}
+
+.quick-amounts button:active {
+    transform: translateY(0);
+}
+
+
+/* ---------- Buttons ---------- */
+
+.primary-button,
+.secondary-button {
+    width: 100%;
+
+    padding: 14px 20px;
+
+    border-radius: 14px;
+
+    font-size: 15px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+
+    box-sizing: border-box;
+}
+
+.primary-button {
+    border: 2px solid #2f7657;
+
+    background: #2f7657;
+    color: white;
+
+    box-shadow:
+        0 8px 18px rgba(47, 118, 87, 0.18);
+}
+
+.primary-button:hover {
+    background: #245d43;
+    border-color: #245d43;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 24px rgba(47, 118, 87, 0.25);
+}
+
+.primary-button:active,
+.secondary-button:active {
+    transform: translateY(0);
+}
+
+.secondary-button {
+    border: 2px solid #ef8978;
+
+    background: #ef8978;
+    color: white;
+
+    box-shadow:
+        0 8px 18px rgba(239, 137, 120, 0.18);
+}
+
+.secondary-button:hover {
+    background: #df7665;
+    border-color: #df7665;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 24px rgba(239, 137, 120, 0.25);
+}
+
+
+/* ---------- Remove Number Input Arrows ---------- */
+
+.amount-input input::-webkit-outer-spin-button,
+.amount-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.amount-input input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+
+/* ---------- Tablet ---------- */
+
+@media (max-width: 800px) {
+    .wallet-page {
+        padding: 35px 18px 50px;
+    }
+
+    .wallet-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wallet-section:nth-child(3) {
+        grid-column: auto;
+    }
+
+    .wallet-heading h1 {
+        font-size: 44px;
+    }
+
+    .wallet-card {
+        padding: 26px;
+    }
+}
+
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 520px) {
+    .wallet-page {
+        padding: 25px 14px 40px;
+    }
+
+    .wallet-heading {
+        margin-bottom: 24px;
+    }
+
+    .wallet-heading h1 {
+        font-size: 38px;
+        letter-spacing: -1.5px;
+    }
+
+    .wallet-heading > p:last-child {
+        font-size: 15px;
+    }
+
+    .wallet-card {
+        min-height: 190px;
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .wallet-card h1 {
+        font-size: 40px;
+    }
+
+    .wallet-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        font-size: 25px;
+    }
+
+    .wallet-user {
+        margin-top: 32px;
+    }
+
+    .wallet-grid {
+        gap: 16px;
+    }
+
+    .wallet-section {
+        padding: 22px;
+        border-radius: 20px;
+    }
+
+    .wallet-section h2 {
+        font-size: 23px;
+    }
+}
+
