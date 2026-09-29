@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import logo from "../assets/logo.png";
 
 function Home() {
+    const navigate = useNavigate();
     return (
         <div className="home-page">
 
@@ -35,11 +37,11 @@ function Home() {
 
 
                     <div className="navbar-actions">
-                        <button className="nav-login">
+                        <button className="nav-login" onClick={() => navigate("/login")}>
                             Sign in
                         </button>
 
-                        <Button>
+                        <Button onClick={() => navigate("/register")}>
                             Get started →
                         </Button>
                     </div>
@@ -76,7 +78,7 @@ function Home() {
 
                             <div className="hero-actions">
 
-                                <Button>
+                                <Button onClick={() => {document.getElementById("menu")?.scrollIntoView({behavior: "smooth"});}}>
                                     Explore the menu →
                                 </Button>
 
@@ -488,7 +490,7 @@ function Home() {
                                 the payment from their own wallet.
                             </p>
 
-                            <Button variant="secondary">
+                            <Button variant="secondary" onClick={() => {document.getElementById("group-order")?.scrollIntoView({behavior: "smooth"});}}>
                                 Start a group order →
                             </Button>
 
@@ -604,7 +606,7 @@ function Home() {
                                     not waiting in line.
                                 </p>
 
-                                <Button>
+                                <Button onClick={() => navigate("/register")}>
                                     Get started →
                                 </Button>
 
@@ -685,9 +687,15 @@ function Home() {
 
                             <div>
                                 <h4>Account</h4>
-                                <a href="#login">Sign in</a>
-                                <a href="#register">Create account</a>
-                                <a href="#orders">My orders</a>
+                                <a href="/login" onClick={(e) => {e.preventDefault();navigate("/login");}}>
+                                    Sign in
+                                </a>
+                                <a href="/register" onClick={(e) => {e.preventDefault();navigate("/register");}}>
+                                    Create account
+                                </a>
+                                <a href="/login" onClick={(e) => {e.preventDefault();navigate("/login");}}>
+                                     My orders
+                                </a>
                             </div>
 
                             <div>
