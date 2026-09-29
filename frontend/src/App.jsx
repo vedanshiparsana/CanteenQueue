@@ -6,6 +6,8 @@ import Register from "./pages/Register";
 import Wallet from "./pages/Wallet";
 import AdminDashboard from "./pages/AdminDashboard";
 import MenuManagement from "./pages/MenuManagement";
+import Inventory from "./pages/Inventory";
+import InventoryAlerts from "./pages/InventoryAlerts";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -40,6 +42,24 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <MenuManagement />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/inventory"
+                element={
+                    <ProtectedRoute>
+                        <Inventory />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/alerts"
+                element={
+                    <ProtectedRoute>
+                        <InventoryAlerts />
                     </ProtectedRoute>
                 }
             />
