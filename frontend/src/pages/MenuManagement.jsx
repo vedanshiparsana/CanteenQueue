@@ -4,7 +4,6 @@ import api from "../services/api";
 import "./MenuManagement.css";
 
 const emptyForm = {
-    menuId: "",
     name: "",
     description: "",
     price: "",
@@ -75,13 +74,12 @@ const MenuManagement = () => {
         setError("");
 
         if (
-            !formData.menuId ||
             !formData.name ||
             !formData.price ||
             !formData.category
         ) {
             setError(
-                "Menu ID, name, price and category are required."
+                "Name, price and category are required."
             );
             return;
         }
@@ -114,15 +112,17 @@ const MenuManagement = () => {
                     "Menu item updated successfully."
                 );
             } else {
-                const response = await api.post("/menu", {
-                    menuId: formData.menuId,
-                    name: formData.name,
-                    description: formData.description,
-                    price: Number(formData.price),
-                    category: formData.category,
-                    imageUrl: formData.imageUrl,
-                    isAvailable: formData.isAvailable
-                });
+                const response = await api.post(
+                    "/menu",
+                    {
+                        name: formData.name,
+                        description: formData.description,
+                        price: Number(formData.price),
+                        category: formData.category,
+                        imageUrl: formData.imageUrl,
+                        isAvailable: formData.isAvailable
+                    }
+                );
 
                 setMenuItems((currentItems) => [
                     ...currentItems,
@@ -130,7 +130,7 @@ const MenuManagement = () => {
                 ]);
 
                 setMessage(
-                    "Menu item added successfully."
+                    `Menu item ${response.data.data.menuId} added successfully.`
                 );
             }
 
@@ -152,7 +152,6 @@ const MenuManagement = () => {
         setEditingId(item.menuId);
 
         setFormData({
-            menuId: item.menuId,
             name: item.name || "",
             description: item.description || "",
             price: item.price ?? "",
@@ -285,12 +284,13 @@ const MenuManagement = () => {
 
                             <h2>
                                 {editingId
-                                    ? "Edit Menu Item"
+                                    ? `Edit Menu Item (${editingId})`
                                     : "Add Menu Item"}
                             </h2>
 
                             <p>
                                 Enter the details of the food item below.
+                                The Menu ID is generated automatically.
                             </p>
                         </div>
                     </div>
@@ -301,25 +301,11 @@ const MenuManagement = () => {
                     >
                         <div className="form-title">
                             {editingId
-                                ? "Edit Menu Item"
+                                ? `Editing ${editingId}`
                                 : "Add Menu Item"}
                         </div>
 
                         <div className="form-grid">
-                            <div className="form-group">
-                                <label>
-                                    Menu ID *
-                                </label>
-
-                                <input
-                                    name="menuId"
-                                    value={formData.menuId}
-                                    onChange={handleChange}
-                                    placeholder="Example: M001"
-                                    disabled={!!editingId}
-                                />
-                            </div>
-
                             <div className="form-group">
                                 <label>
                                     Name *
@@ -459,37 +445,18 @@ const MenuManagement = () => {
                             <table className="menu-table">
                                 <thead>
                                     <tr>
-                                        <th>
-                                            Menu ID
-                                        </th>
-
-                                        <th>
-                                            Name
-                                        </th>
-
-                                        <th>
-                                            Category
-                                        </th>
-
-                                        <th>
-                                            Price
-                                        </th>
-
-                                        <th>
-                                            Status
-                                        </th>
-
-                                        <th>
-                                            Actions
-                                        </th>
+                                        <th>Menu ID</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
                                     {menuItems.map((item) => (
-                                        <tr
-                                            key={item.menuId}
-                                        >
+                                        <tr key={item.menuId}>
                                             <td>
                                                 <strong>
                                                     {item.menuId}
@@ -503,9 +470,7 @@ const MenuManagement = () => {
 
                                                 {item.description && (
                                                     <small>
-                                                        {
-                                                            item.description
-                                                        }
+                                                        {item.description}
                                                     </small>
                                                 )}
                                             </td>
@@ -542,9 +507,7 @@ const MenuManagement = () => {
                                                     <button
                                                         className="edit-button"
                                                         onClick={() =>
-                                                            handleEdit(
-                                                                item
-                                                            )
+                                                            handleEdit(item)
                                                         }
                                                     >
                                                         Edit

@@ -4,7 +4,6 @@ import api from "../services/api";
 import "./Inventory.css";
 
 const emptyForm = {
-    itemId: "",
     itemName: "",
     currentStockCount: "",
     unitType: ""
@@ -72,13 +71,12 @@ const Inventory = () => {
         setError("");
 
         if (
-            !formData.itemId ||
             !formData.itemName ||
             formData.currentStockCount === "" ||
             !formData.unitType
         ) {
             setError(
-                "Item ID, item name, stock count and unit type are required."
+                "Item name, stock count and unit type are required."
             );
             return;
         }
@@ -118,7 +116,6 @@ const Inventory = () => {
                 const response = await api.post(
                     "/inventory",
                     {
-                        itemId: formData.itemId,
                         itemName: formData.itemName,
                         currentStockCount: Number(
                             formData.currentStockCount
@@ -133,7 +130,7 @@ const Inventory = () => {
                 ]);
 
                 setMessage(
-                    "Inventory item added successfully."
+                    `Inventory item ${response.data.data.itemId} added successfully.`
                 );
             }
 
@@ -155,7 +152,6 @@ const Inventory = () => {
         setEditingId(item.itemId);
 
         setFormData({
-            itemId: item.itemId,
             itemName: item.itemName || "",
             currentStockCount:
                 item.currentStockCount ?? "",
@@ -307,13 +303,13 @@ const Inventory = () => {
 
                             <h2>
                                 {editingId
-                                    ? "Edit Inventory Item"
+                                    ? `Edit Inventory Item (${editingId})`
                                     : "Add Inventory Item"}
                             </h2>
 
                             <p>
-                                Add or update the stock information for
-                                canteen ingredients.
+                                Add or update stock information.
+                                The Item ID is generated automatically.
                             </p>
                         </div>
                     </div>
@@ -324,25 +320,11 @@ const Inventory = () => {
                     >
                         <div className="inventory-form-title">
                             {editingId
-                                ? "Edit Inventory Item"
+                                ? `Editing ${editingId}`
                                 : "Add Inventory Item"}
                         </div>
 
                         <div className="inventory-form-grid">
-                            <div className="inventory-form-group">
-                                <label>
-                                    Item ID *
-                                </label>
-
-                                <input
-                                    name="itemId"
-                                    value={formData.itemId}
-                                    onChange={handleChange}
-                                    placeholder="Example: I001"
-                                    disabled={!!editingId}
-                                />
-                            </div>
-
                             <div className="inventory-form-group">
                                 <label>
                                     Item Name *

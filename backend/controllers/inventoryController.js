@@ -1,35 +1,55 @@
 const Inventory = require("../models/Inventory");
 const InventoryAlert = require("../models/InventoryAlert");
+const generateNextId = require("../utils/idGenerator");
 
 // Create inventory item
 const createInventoryItem = async (req, res) => {
     try {
-        const { itemId, itemName, currentStockCount, unitType } = req.body;
+        const {
+            itemName,
+            currentStockCount,
+            unitType
+        } = req.body;
 
-        const existingItem = await Inventory.findOne({ itemId });
-
-        if (existingItem) {
+        if (
+            !itemName ||
+            currentStockCount === undefined ||
+            !unitType
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Item ID already exists"
+                message: "Item name, stock count and unit type are required"
             });
         }
+
+        if (Number(currentStockCount) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Stock count cannot be negative"
+            });
+        }
+
+        const itemId = await generateNextId(
+            "I",
+            Inventory,
+            "itemId"
+        );
 
         const item = await Inventory.create({
             itemId,
             itemName,
-            currentStockCount,
+            currentStockCount: Number(currentStockCount),
             unitType
         });
 
-        if (currentStockCount <= 5) {
+        if (Number(currentStockCount) <= 5) {
             await InventoryAlert.create({
                 itemId,
                 itemName,
-                alertType: currentStockCount === 0
+                alertType: Number(currentStockCount) === 0
                     ? "OUT_OF_STOCK"
                     : "LOW_STOCK",
-                currentStock: currentStockCount
+                currentStock: Number(currentStockCount)
             });
         }
 
@@ -49,10 +69,13 @@ const createInventoryItem = async (req, res) => {
     }
 };
 
+
 // Get all inventory items
 const getInventoryItems = async (req, res) => {
     try {
-        const items = await Inventory.find().sort({ itemName: 1 });
+        const items = await Inventory.find().sort({
+            itemName: 1
+        });
 
         res.status(200).json({
             success: true,
@@ -75,12 +98,17 @@ const getInventoryItems = async (req, res) => {
 const updateInventoryItem = async (req, res) => {
     try {
         const item = await Inventory.findOneAndUpdate(
-            { itemId: req.params.id },
+            {
+                itemId: req.params.id
+            },
             {
                 ...req.body,
                 lastUpdated: new Date()
             },
-            { new: true, runValidators: true }
+            {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!item) {
@@ -90,14 +118,11 @@ const updateInventoryItem = async (req, res) => {
             });
         }
 
-        // Check stock level
         if (item.currentStockCount <= 5) {
-
             const alertType = item.currentStockCount === 0
                 ? "OUT_OF_STOCK"
                 : "LOW_STOCK";
 
-            // Remove old active alert
             await InventoryAlert.updateMany(
                 {
                     itemId: item.itemId,
@@ -108,7 +133,6 @@ const updateInventoryItem = async (req, res) => {
                 }
             );
 
-            // Create new alert
             await InventoryAlert.create({
                 itemId: item.itemId,
                 itemName: item.itemName,
@@ -117,8 +141,6 @@ const updateInventoryItem = async (req, res) => {
             });
 
         } else {
-
-            // Stock is sufficient, resolve active alerts
             await InventoryAlert.updateMany(
                 {
                     itemId: item.itemId,
@@ -145,6 +167,7 @@ const updateInventoryItem = async (req, res) => {
         });
     }
 };
+
 
 // Delete inventory item
 const deleteInventoryItem = async (req, res) => {
@@ -174,6 +197,7 @@ const deleteInventoryItem = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     createInventoryItem,

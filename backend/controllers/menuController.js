@@ -1,16 +1,15 @@
 const Menu = require("../models/Menu");
+const generateNextId = require("../utils/idGenerator");
 
 // Get all available menu items with optional category filtering
 const getMenuItems = async (req, res) => {
     try {
         const { category } = req.query;
 
-        // Base filter: only available food items
         const filter = {
             isAvailable: true
         };
 
-        // Add category filter if provided
         if (category) {
             filter.category = category;
         }
@@ -41,7 +40,6 @@ const getMenuItems = async (req, res) => {
 const createMenuItem = async (req, res) => {
     try {
         const {
-            menuId,
             name,
             description,
             price,
@@ -50,10 +48,10 @@ const createMenuItem = async (req, res) => {
             isAvailable
         } = req.body;
 
-        if (!menuId || !name || price === undefined || !category) {
+        if (!name || price === undefined || !category) {
             return res.status(400).json({
                 success: false,
-                message: "Menu ID, name, price and category are required"
+                message: "Name, price and category are required"
             });
         }
 
@@ -64,14 +62,11 @@ const createMenuItem = async (req, res) => {
             });
         }
 
-        const existingMenu = await Menu.findOne({ menuId });
-
-        if (existingMenu) {
-            return res.status(409).json({
-                success: false,
-                message: "Menu ID already exists"
-            });
-        }
+        const menuId = await generateNextId(
+            "M",
+            Menu,
+            "menuId"
+        );
 
         const menuItem = await Menu.create({
             menuId,
@@ -116,7 +111,9 @@ const updateMenuItem = async (req, res) => {
             isAvailable
         } = req.body;
 
-        const menuItem = await Menu.findOne({ menuId: id });
+        const menuItem = await Menu.findOne({
+            menuId: id
+        });
 
         if (!menuItem) {
             return res.status(404).json({
