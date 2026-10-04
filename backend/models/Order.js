@@ -56,6 +56,29 @@ const orderSchema = new mongoose.Schema(
             }
         ],
 
+        memberPayments: [
+            {
+                userId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                    required: true
+                },
+                amount: {
+                    type: Number,
+                    required: true,
+                    min: 0
+                },
+                paid: {
+                    type: Boolean,
+                    default: false
+                },
+                refunded: {
+                    type: Boolean,
+                    default: false
+                }
+            }
+        ],
+
         items: {
             type: [orderItemSchema],
             required: true
@@ -76,6 +99,7 @@ const orderSchema = new mongoose.Schema(
         orderStatus: {
             type: String,
             enum: [
+                "AwaitingPayment",
                 "Received",
                 "Preparing",
                 "Ready",
@@ -86,18 +110,9 @@ const orderSchema = new mongoose.Schema(
         },
 
         pickupSlot: {
-            date: {
-                type: Date,
-                required: true
-            },
-
-            startTime: {
-                type: String,
-                required: true
-            },
-
-            endTime: {
-                type: String,
+            slotId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "PickupSlot",
                 required: true
             }
         }

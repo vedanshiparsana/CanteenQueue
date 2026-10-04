@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../services/authService";
+import "../styles/pages/Auth.css";
 
 const Register = () => {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Register = () => {
         email: "",
         password: "",
         phone_no: "",
+        role: "student",
     });
 
     const [error, setError] = useState("");
@@ -83,7 +85,7 @@ const Register = () => {
                 <form onSubmit={handleSubmit}>
 
                     <div className="form-group">
-                        <label>Student ID *</label>
+                        <label>{formData.role === "staff" ? "Staff ID *" : "Student ID *"}</label>
 
                         <input
                             name="userId"
@@ -126,6 +128,19 @@ const Register = () => {
                             value={formData.phone_no}
                             onChange={handleChange}
                         />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="role">Account type *</label>
+                        <select
+                            id="role"
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                        >
+                            <option value="student">Student</option>
+                            <option value="staff">Staff</option>
+                        </select>
                     </div>
 
                     <div className="form-group">

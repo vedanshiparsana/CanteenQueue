@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
-import "./Inventory.css";
-
+import "../styles/pages/Inventory.css";
 const emptyForm = {
     itemName: "",
     currentStockCount: "",

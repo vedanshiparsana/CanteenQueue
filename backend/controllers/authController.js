@@ -11,7 +11,8 @@ const registerUser = async (req, res) => {
             name,
             email,
             password,
-            phone_no
+            phone_no,
+            role
         } = req.body;
 
         // Check required fields
@@ -19,6 +20,14 @@ const registerUser = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "User ID, name, email and password are required"
+            });
+        }
+
+        const selectedRole = role || "student";
+        if (!["student", "staff"].includes(selectedRole)) {
+            return res.status(400).json({
+                success: false,
+                message: "Role must be student or staff"
             });
         }
 
@@ -45,15 +54,13 @@ const registerUser = async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
-        // Public registration always creates a student
         const user = await User.create({
             userId,
             name,
             email,
             password: hashedPassword,
             phone_no,
-            role: "student"
+            role: selectedRole
         });
 
         return res.status(201).json({

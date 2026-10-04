@@ -1,14 +1,16 @@
 const express = require("express");
 
 const {
-    createOrder,
-    getMyOrders,
-    getOrderById,
-    getAllOrders,
-    updateOrderStatus,
-    cancelOrder,
-    updatePickupSlot
-} = require("../controllers/orderController");
+    createGroupOrder,
+    joinGroupOrder,
+    getMyGroups,
+    deleteGroup,
+    getGroupOrder,
+    addGroupItem,
+    removeGroupItem,
+    payGroupShare,
+    createFinalGroupOrder
+} = require("../controllers/groupController");
 
 const authenticateUser =
     require("../middleware/authMiddleware");
@@ -17,91 +19,105 @@ const router = express.Router();
 
 
 // =========================================================
-// CREATE ORDER
-// POST /api/orders
+// CREATE GROUP
+// POST /api/groups/create
 // =========================================================
 
 router.post(
-    "/",
+    "/create",
     authenticateUser,
-    createOrder
+    createGroupOrder
 );
 
 
 // =========================================================
-// GET LOGGED-IN USER'S ORDERS
-// GET /api/orders/my
+// JOIN GROUP
+// POST /api/groups/join
+// =========================================================
+
+router.post(
+    "/join",
+    authenticateUser,
+    joinGroupOrder
+);
+
+
+// =========================================================
+// GET MY GROUPS
+// GET /api/groups/my
 // =========================================================
 
 router.get(
     "/my",
     authenticateUser,
-    getMyOrders
+    getMyGroups
+);
+
+router.delete(
+    "/:groupCode",
+    authenticateUser,
+    deleteGroup
 );
 
 
 // =========================================================
-// GET ALL ORDERS
-// GET /api/orders
+// PAY GROUP SHARE
+// POST /api/groups/pay
+// =========================================================
+
+router.post(
+    "/pay",
+    authenticateUser,
+    payGroupShare
+);
+
+
+// =========================================================
+// FINALIZE GROUP
+// POST /api/groups/finalize
+// =========================================================
+
+router.post(
+    "/finalize",
+    authenticateUser,
+    createFinalGroupOrder
+);
+
+
+// =========================================================
+// ADD GROUP ITEM
+// POST /api/groups/:groupCode/items
+// =========================================================
+
+router.post(
+    "/:groupCode/items",
+    authenticateUser,
+    addGroupItem
+);
+
+
+// =========================================================
+// REMOVE GROUP ITEM
+// DELETE /api/groups/:groupCode/items/:menuId
+// =========================================================
+
+router.delete(
+    "/:groupCode/items/:menuId",
+    authenticateUser,
+    removeGroupItem
+);
+
+
+// =========================================================
+// GET GROUP
+// GET /api/groups/:groupCode
 // =========================================================
 
 router.get(
-    "/",
+    "/:groupCode",
     authenticateUser,
-    getAllOrders
+    getGroupOrder
 );
 
-
-// =========================================================
-// GET SINGLE ORDER
-// GET /api/orders/:id
-// =========================================================
-
-router.get(
-    "/:id",
-    authenticateUser,
-    getOrderById
-);
-
-
-// =========================================================
-// UPDATE ORDER STATUS
-// PUT /api/orders/:id/status
-// =========================================================
-
-router.put(
-    "/:id/status",
-    authenticateUser,
-    updateOrderStatus
-);
-
-
-// =========================================================
-// CANCEL ORDER
-// PUT /api/orders/:id/cancel
-// =========================================================
-
-router.put(
-    "/:id/cancel",
-    authenticateUser,
-    cancelOrder
-);
-
-
-// =========================================================
-// UPDATE PICKUP SLOT
-// PUT /api/orders/:id/pickup-slot
-// =========================================================
-
-router.put(
-    "/:id/pickup-slot",
-    authenticateUser,
-    updatePickupSlot
-);
-
-
-// =========================================================
-// EXPORT
-// =========================================================
 
 module.exports = router;

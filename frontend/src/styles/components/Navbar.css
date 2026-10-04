@@ -1,0 +1,139 @@
+.home-navbar {
+    padding: 20px 0;
+    position: relative;
+    z-index: 10;
+}
+
+.navbar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 14px;
+}
+
+.brand-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.logo-c {
+    position: relative;
+    left: -2px;
+    font-size: 19px;
+}
+
+.logo-q {
+    position: relative;
+    left: 1px;
+    top: 3px;
+    font-size: 15px;
+    color: #D9E9DC;
+}
+
+.brand-text {
+    line-height: 1.1;
+}
+
+.brand-name {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--green-dark);
+}
+
+.brand-name span {
+    color: var(--green);
+}
+
+.brand-tagline {
+    color: var(--text-muted);
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-left: auto;
+}
+
+.nav-links a {
+    position: relative;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.nav-links a:hover {
+    color: var(--green);
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -7px;
+    width: 0;
+    height: 2px;
+    border-radius: 5px;
+    background: var(--coral);
+    transition: width 0.2s ease;
+}
+
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nav-login {
+    border: none;
+    background: transparent;
+    color: var(--green);
+    font-weight: 700;
+    padding: 10px;
+}
+
+/* RESPONSIVE NAVBAR */
+
+@media (max-width: 1000px) {
+    .nav-links {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .brand-tagline {
+        display: none;
+    }
+
+    .navbar-actions .cq-button {
+        display: none;
+    }
+
+    .nav-login {
+        padding: 8px 0;
+    }
+}

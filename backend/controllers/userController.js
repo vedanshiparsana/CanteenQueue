@@ -1,5 +1,63 @@
 const User = require("../models/User");
 
+const updateMyProfile = async (req, res) => {
+    try {
+        const name = String(req.body.name || "").trim();
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const phone_no = String(req.body.phone_no || "").trim();
+
+        if (!name || !email) {
+            return res.status(400).json({
+                success: false,
+                message: "Name and email are required."
+            });
+        }
+
+        const duplicateEmail = await User.findOne({
+            email,
+            _id: { $ne: req.user.id }
+        });
+
+        if (duplicateEmail) {
+            return res.status(409).json({
+                success: false,
+                message: "Email is already registered."
+            });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: { name, email, phone_no } },
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Profile updated successfully.",
+            data: {
+                userId: user.userId,
+                name: user.name,
+                email: user.email,
+                phone_no: user.phone_no,
+                role: user.role,
+                wallet: user.wallet
+            }
+        });
+    } catch (error) {
+        console.error("updateMyProfile:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update profile."
+        });
+    }
+};
 
 // Get all users
 // Admin only
@@ -163,6 +221,7 @@ const deleteUser = async (req, res) => {
 
 
 module.exports = {
+    updateMyProfile,
     getAllUsers,
     getUserById,
     updateUserRole,

@@ -1,3 +1,4 @@
+import "../styles/components/Button.css";
 function Button({
     children,
     variant = "primary",

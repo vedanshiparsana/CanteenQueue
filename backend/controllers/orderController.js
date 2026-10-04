@@ -1,455 +1,1416 @@
+const mongoose = require("mongoose");
+
 const Order = require("../models/Order");
 const User = require("../models/User");
 const Menu = require("../models/Menu");
-const Cart = require("../models/Cart")
+const Cart = require("../models/Cart");
+const Transaction = require("../models/Transaction");
+const { randomUUID } = require("crypto");
+const {
+    reservePickupSlot,
+    releasePickupSlot
+} = require("../utils/pickupSlotReservation");
 
-const createOrder = async (req, res) => {
+
+// =========================================================
+// POPULATE ORDER
+// =========================================================
+
+const populateOrder = (query) => {
+    return query
+        .populate(
+            "userId",
+            "name userId email phone_no role"
+        )
+        .populate(
+            "participants",
+            "name userId email"
+        )
+        .populate(
+            "memberPayments.userId",
+            "name userId email"
+        )
+        .populate(
+            "items.menuId",
+            "name price category description isAvailable"
+        )
+        .populate(
+            "pickupSlot.slotId",
+            "date startTime endTime capacity bookedCount isActive"
+        );
+};
+
+
+// =========================================================
+// CREATE ORDER
+// POST /api/orders
+// =========================================================
+
+const createOrder = async (
+    req,
+    res
+) => {
+
     try {
+
+        const user = req.user;
+
+
         const {
             orderId,
             items,
-            pickupSlot,
-            isGroupOrder,
-            groupCode,
-            participants
+            pickupSlot
         } = req.body;
 
-        if (!orderId || !items || items.length === 0 || !pickupSlot) {
+
+        // -------------------------------------------------
+        // ORDER ID
+        // -------------------------------------------------
+
+        if (!orderId) {
+
             return res.status(400).json({
+
                 success: false,
-                message: "Order ID, items and pickup slot are required"
+
+                message:
+                    "Order ID is required."
             });
         }
 
-        // Get logged-in user
-        const user = await User.findOne({
-            userId: req.user.userId
-        });
 
-        if (!user) {
-            return res.status(404).json({
+        // -------------------------------------------------
+        // ITEMS
+        // -------------------------------------------------
+
+        if (
+            !Array.isArray(items) ||
+            items.length === 0
+        ) {
+
+            return res.status(400).json({
+
                 success: false,
-                message: "User not found"
+
+                message:
+                    "At least one order item is required."
             });
         }
 
-        // Check duplicate order ID
-        const existingOrder = await Order.findOne({ orderId });
 
-        if (existingOrder) {
-            return res.status(409).json({
+        // -------------------------------------------------
+        // PICKUP SLOT
+        // -------------------------------------------------
+
+        if (!pickupSlot?.slotId) {
+
+            return res.status(400).json({
+
                 success: false,
-                message: "Order ID already exists"
+
+                message:
+                    "Pickup slot is required."
             });
         }
+
+
+        // -------------------------------------------------
+        // GET MENU ITEMS
+        // -------------------------------------------------
+
+        const menuIds = items.map(
+            (item) =>
+                item.menuId
+        );
+
+
+        const menuItems =
+            await Menu.find({
+                _id: {
+                    $in: menuIds
+                },
+
+                isAvailable: true
+            });
+
+
+        if (
+            menuItems.length !==
+            menuIds.length
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "One or more menu items are unavailable."
+            });
+        }
+
+
+        // -------------------------------------------------
+        // NORMALIZE ITEMS
+        // -------------------------------------------------
+
+        const normalizedItems = [];
 
         let totalAmount = 0;
-        const orderItems = [];
 
-        // Validate menu items and calculate total
-        for (const item of items) {
 
-            const menuItem = await Menu.findById(item.menuId);
+        for (
+            const item of items
+        ) {
 
-            if (!menuItem) {
-                return res.status(404).json({
-                    success: false,
-                    message: `Menu item not found: ${item.menuId}`
-                });
-            }
+            const menuItem =
+                menuItems.find(
+                    (menu) =>
+                        menu._id.toString() ===
+                        item.menuId.toString()
+                );
 
-            if (!menuItem.isAvailable) {
+
+            const quantity =
+                Number(
+                    item.quantity
+                );
+
+
+            if (
+                !menuItem ||
+                !Number.isInteger(
+                    quantity
+                ) ||
+                quantity < 1
+            ) {
+
                 return res.status(400).json({
+
                     success: false,
-                    message: `${menuItem.name} is currently unavailable`
+
+                    message:
+                        "Invalid order item."
                 });
             }
 
-            const quantity = Number(item.quantity);
 
-            if (!quantity || quantity < 1) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Quantity must be at least 1"
-                });
-            }
+            const price =
+                Number(
+                    menuItem.price
+                );
 
-            const itemTotal = menuItem.price * quantity;
 
-            totalAmount += itemTotal;
+            totalAmount +=
+                price * quantity;
 
-            orderItems.push({
-                menuId: menuItem._id,
+
+            normalizedItems.push({
+
+                menuId:
+                    menuItem._id,
+
                 quantity,
-                price: menuItem.price
+
+                price
             });
         }
 
-        const order = await Order.create({
-            orderId,
-            userId: user._id,
-            isGroupOrder: isGroupOrder || false,
-            groupCode: groupCode || null,
-            participants: participants || [],
-            items: orderItems,
-            totalAmount,
-            paymentStatus: "pending",
-            orderStatus: "Received",
-            pickupSlot
-        });
 
-        return res.status(201).json({
-            success: true,
-            message: "Order created successfully",
-            data: order
-        });
+        // -------------------------------------------------
+        // RESERVE PICKUP SLOT
+        // -------------------------------------------------
+
+        await reservePickupSlot(
+            pickupSlot.slotId
+        );
+
+
+        // -------------------------------------------------
+        // CREATE ORDER
+        // -------------------------------------------------
+
+        try {
+
+            const order =
+                await Order.create({
+
+                    orderId,
+
+                    userId:
+                        user.id,
+
+                    isGroupOrder:
+                        false,
+
+                    items:
+                        normalizedItems,
+
+                    totalAmount,
+
+                    paymentStatus:
+                        "pending",
+
+                    orderStatus:
+                        "AwaitingPayment",
+
+                    pickupSlot: {
+
+                        slotId:
+                            pickupSlot.slotId
+                    }
+                });
+
+
+            // -------------------------------------------------
+            // CLEAR CART
+            // -------------------------------------------------
+
+            await Cart.findOneAndUpdate(
+                {
+                    userId:
+                        user.id
+                },
+                {
+                    $set: {
+
+                        items: [],
+
+                        runningTotal: 0
+                    }
+                }
+            );
+
+
+            // -------------------------------------------------
+            // POPULATE ORDER
+            // -------------------------------------------------
+
+            const populatedOrder =
+                await populateOrder(
+                    Order.findById(
+                        order._id
+                    )
+                );
+
+
+            return res.status(201).json({
+
+                success: true,
+
+                message:
+                    "Order created successfully.",
+
+                data:
+                    populatedOrder
+            });
+
+
+        } catch (error) {
+
+            // Order creation failed after slot
+            // was reserved, so release it.
+
+            await releasePickupSlot(
+                pickupSlot.slotId
+            );
+
+            throw error;
+        }
+
 
     } catch (error) {
-        console.error("Create order error:", error);
 
-        return res.status(500).json({
+        console.error(
+            "createOrder:",
+            error
+        );
+
+
+        return res.status(400).json({
+
             success: false,
-            message: "Failed to create order",
-            error: error.message
+
+            message:
+                error.message ||
+                "Unable to create order."
         });
     }
 };
 
-const getMyOrders = async (req, res) => {
+
+// =========================================================
+// GET MY ORDERS
+// GET /api/orders/my
+// =========================================================
+
+const getMyOrders = async (
+    req,
+    res
+) => {
+
     try {
 
-        const user = await User.findOne({
-            userId: req.user.userId
-        });
+        const user = req.user;
 
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
 
-        const orders = await Order.find({
-            userId: user._id
-        })
-            .populate("items.menuId")
-            .sort({ createdAt: -1 });
+        const orders =
+            await populateOrder(
+                Order.find({
 
-        return res.status(200).json({
+                    $or: [
+
+                        {
+                            userId:
+                                user.id
+                        },
+
+                        {
+                            participants:
+                                user.id
+                        }
+                    ]
+
+                }).sort({
+                    createdAt: -1
+                })
+            );
+
+
+        return res.json({
+
             success: true,
-            count: orders.length,
-            data: orders
+
+            count:
+                orders.length,
+
+            data:
+                orders
         });
+
 
     } catch (error) {
-        console.error("Get my orders error:", error);
+
+        console.error(
+            "getMyOrders:",
+            error
+        );
+
 
         return res.status(500).json({
+
             success: false,
-            message: "Failed to fetch orders",
-            error: error.message
+
+            message:
+                "Unable to load orders."
         });
     }
 };
 
-const getOrderById = async (req, res) => {
+
+// =========================================================
+// GET ORDER BY ID
+// GET /api/orders/:id
+// =========================================================
+
+const getOrderById = async (
+    req,
+    res
+) => {
+
     try {
 
-        const order = await Order.findOne({
-            orderId: req.params.id
-        })
-            .populate("userId", "userId name email")
-            .populate("items.menuId")
-            .populate("participants", "userId name email");
+        const user = req.user;
+
+        const orderIdParam =
+            req.params.id;
+
+        let orderQuery;
+
+
+        // -------------------------------------------------
+        // FIND ORDER
+        // -------------------------------------------------
+        // Custom IDs look like:
+        // ORD1791043351404
+        //
+        // MongoDB _id looks like:
+        // 68xxxxxxxxxxxxxxxxxxxxxx
+        //
+        // Do not send a custom orderId into the _id
+        // condition because Mongoose will try to cast it
+        // to ObjectId and throw a CastError.
+        // -------------------------------------------------
+
+        if (
+            mongoose.Types.ObjectId.isValid(
+                orderIdParam
+            )
+        ) {
+
+            orderQuery =
+                Order.findOne({
+
+                    $or: [
+
+                        {
+                            _id:
+                                orderIdParam
+                        },
+
+                        {
+                            orderId:
+                                orderIdParam
+                        }
+                    ]
+                });
+
+        } else {
+
+            orderQuery =
+                Order.findOne({
+
+                    orderId:
+                        orderIdParam
+                });
+        }
+
+
+        const order =
+            await populateOrder(
+                orderQuery
+            );
+
+
+        // -------------------------------------------------
+        // ORDER NOT FOUND
+        // -------------------------------------------------
 
         if (!order) {
+
             return res.status(404).json({
+
                 success: false,
-                message: "Order not found"
+
+                message:
+                    "Order not found."
             });
         }
 
-        return res.status(200).json({
+
+        // -------------------------------------------------
+        // CHECK OWNER
+        // -------------------------------------------------
+
+        const isOwner =
+            order.userId?._id?.toString() ===
+            user.id.toString();
+
+
+        // -------------------------------------------------
+        // CHECK PARTICIPANT
+        // -------------------------------------------------
+
+        const isParticipant =
+            order.participants?.some(
+                (participant) =>
+                    participant?._id?.toString() ===
+                    user.id.toString()
+            );
+
+
+        // -------------------------------------------------
+        // CHECK ADMIN / STAFF
+        // -------------------------------------------------
+
+        const isPrivileged =
+            [
+                "admin",
+                "staff"
+            ].includes(
+                user.role
+            );
+
+
+        // -------------------------------------------------
+        // AUTHORIZATION
+        // -------------------------------------------------
+
+        if (
+            !isOwner &&
+            !isParticipant &&
+            !isPrivileged
+        ) {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "You are not allowed to view this order."
+            });
+        }
+
+
+        // -------------------------------------------------
+        // RESPONSE
+        // -------------------------------------------------
+
+        return res.json({
+
             success: true,
-            data: order
+
+            data:
+                order
         });
 
+
     } catch (error) {
-        console.error("Get order error:", error);
+
+        console.error(
+            "getOrderById:",
+            error
+        );
+
 
         return res.status(500).json({
+
             success: false,
-            message: "Failed to fetch order",
-            error: error.message
+
+            message:
+                "Unable to load order."
         });
     }
 };
 
-const getAllOrders = async (req, res) => {
+
+// =========================================================
+// GET ALL ORDERS
+// GET /api/orders
+// =========================================================
+
+const getAllOrders = async (
+    req,
+    res
+) => {
+
     try {
 
-        const orders = await Order.find()
-            .populate("userId", "userId name email")
-            .populate("items.menuId")
-            .populate("participants", "userId name email")
-            .sort({ createdAt: -1 });
+        const orders =
+            await populateOrder(
+                Order.find().sort({
+                    createdAt: -1
+                })
+            );
 
-        return res.status(200).json({
+
+        return res.json({
+
             success: true,
-            count: orders.length,
-            data: orders
+
+            count:
+                orders.length,
+
+            data:
+                orders
         });
 
+
     } catch (error) {
-        console.error("Get all orders error:", error);
+
+        console.error(
+            "getAllOrders:",
+            error
+        );
+
 
         return res.status(500).json({
+
             success: false,
-            message: "Failed to fetch all orders",
-            error: error.message
+
+            message:
+                "Unable to load orders."
         });
     }
 };
 
-const updateOrderStatus = async (req, res) => {
+
+// =========================================================
+// UPDATE ORDER STATUS
+// PUT /api/orders/:id/status
+// =========================================================
+
+const updateOrderStatus = async (
+    req,
+    res
+) => {
+
     try {
 
-        const { status } = req.body;
+        const {
+            status
+        } = req.body;
 
-        const allowedStatuses = [
+
+        const validStatuses = [
+
             "Received",
+
             "Preparing",
+
             "Ready",
+
             "Completed",
+
             "Cancelled"
         ];
 
-        if (!status || !allowedStatuses.includes(status)) {
+
+        if (
+            !validStatuses.includes(
+                status
+            )
+        ) {
+
             return res.status(400).json({
+
                 success: false,
-                message: "Invalid order status"
+
+                message:
+                    "Invalid order status."
             });
         }
 
-        const order = await Order.findOne({
-            orderId: req.params.id
-        });
+
+        const orderIdParam =
+            req.params.id;
+
+        let order;
+
+
+        // -------------------------------------------------
+        // FIND ORDER
+        // -------------------------------------------------
+
+        if (
+            mongoose.Types.ObjectId.isValid(
+                orderIdParam
+            )
+        ) {
+
+            order =
+                await Order.findOne({
+
+                    $or: [
+
+                        {
+                            _id:
+                                orderIdParam
+                        },
+
+                        {
+                            orderId:
+                                orderIdParam
+                        }
+                    ]
+                });
+
+        } else {
+
+            order =
+                await Order.findOne({
+
+                    orderId:
+                        orderIdParam
+                });
+        }
+
 
         if (!order) {
+
             return res.status(404).json({
+
                 success: false,
-                message: "Order not found"
+
+                message:
+                    "Order not found."
             });
         }
 
-        // Prevent updating cancelled/completed orders
-        if (
-            order.orderStatus === "Cancelled" ||
-            order.orderStatus === "Completed"
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: `Cannot update an order that is already ${order.orderStatus}`
-            });
-        }
 
-        order.orderStatus = status;
+        const previousStatus =
+            order.orderStatus;
+
+
+        // -------------------------------------------------
+        // UPDATE STATUS
+        // -------------------------------------------------
+
+        order.orderStatus =
+            status;
+
+
+        // -------------------------------------------------
+        // SAVE
+        // -------------------------------------------------
 
         await order.save();
 
-        return res.status(200).json({
+
+        // -------------------------------------------------
+        // RELEASE SLOT WHEN CANCELLED
+        // -------------------------------------------------
+
+        if (
+            status === "Cancelled" &&
+            previousStatus !== "Cancelled"
+        ) {
+
+            await releasePickupSlot(
+                order.pickupSlot?.slotId
+            );
+        }
+
+
+        // -------------------------------------------------
+        // GET UPDATED ORDER
+        // -------------------------------------------------
+
+        const updatedOrder =
+            await populateOrder(
+                Order.findById(
+                    order._id
+                )
+            );
+
+
+        return res.json({
+
             success: true,
-            message: "Order status updated successfully",
-            data: order
+
+            message:
+                "Order status updated.",
+
+            data:
+                updatedOrder
         });
 
-    } catch (error) {
-        console.error("Update order status error:", error);
 
-        return res.status(500).json({
+    } catch (error) {
+
+        console.error(
+            "updateOrderStatus:",
+            error
+        );
+
+
+        return res.status(400).json({
+
             success: false,
-            message: "Failed to update order status",
-            error: error.message
+
+            message:
+                error.message ||
+                "Unable to update order status."
         });
     }
 };
 
-const updatePickupSlot = async (req, res) => {
+
+// =========================================================
+// UPDATE PICKUP SLOT
+// PUT /api/orders/:id/pickup-slot
+// =========================================================
+
+const updatePickupSlot = async (
+    req,
+    res
+) => {
+
     try {
-        const { date, startTime, endTime } = req.body;
 
-        if (!date || !startTime || !endTime) {
+        const user = req.user;
+
+
+        const {
+            slotId
+        } = req.body;
+
+
+        if (!slotId) {
+
             return res.status(400).json({
+
                 success: false,
-                message: "Date, start time and end time are required"
+
+                message:
+                    "Pickup slot is required."
             });
         }
 
-        // Validate time format: HH:MM
-        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-        if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
-            return res.status(400).json({
-                success: false,
-                message: "Time must be in HH:MM format"
-            });
+        const orderIdParam =
+            req.params.id;
+
+        let order;
+
+
+        // -------------------------------------------------
+        // FIND ORDER
+        // -------------------------------------------------
+
+        if (
+            mongoose.Types.ObjectId.isValid(
+                orderIdParam
+            )
+        ) {
+
+            order =
+                await Order.findOne({
+
+                    $or: [
+
+                        {
+                            _id:
+                                orderIdParam
+                        },
+
+                        {
+                            orderId:
+                                orderIdParam
+                        }
+                    ]
+                });
+
+        } else {
+
+            order =
+                await Order.findOne({
+
+                    orderId:
+                        orderIdParam
+                });
         }
 
-        // Start time must be before end time
-        if (startTime >= endTime) {
-            return res.status(400).json({
-                success: false,
-                message: "Start time must be before end time"
-            });
-        }
-
-        const pickupDate = new Date(date);
-
-        if (isNaN(pickupDate.getTime())) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid pickup date"
-            });
-        }
-
-        // Prevent scheduling in the past
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        pickupDate.setHours(0, 0, 0, 0);
-
-        if (pickupDate < today) {
-            return res.status(400).json({
-                success: false,
-                message: "Pickup date cannot be in the past"
-            });
-        }
-
-        const order = await Order.findOne({
-            orderId: req.params.id
-        });
 
         if (!order) {
+
             return res.status(404).json({
+
                 success: false,
-                message: "Order not found"
+
+                message:
+                    "Order not found."
             });
         }
 
-        // Only the owner of the order can schedule the pickup
-        const user = await User.findOne({
-            userId: req.user.userId
-        });
 
-        if (!user || order.userId.toString() !== user._id.toString()) {
+        // -------------------------------------------------
+        // CHECK OWNER
+        // -------------------------------------------------
+
+        const isOwner =
+            order.userId.toString() ===
+            user.id.toString();
+
+        // -------------------------------------------------
+        // CHECK ADMIN / STAFF
+        // -------------------------------------------------
+
+        const isPrivileged =
+            [
+                "admin",
+                "staff"
+            ].includes(
+                user.role
+            );
+
+
+        if (
+            !isOwner &&
+            !isPrivileged
+        ) {
+
             return res.status(403).json({
+
                 success: false,
-                message: "You are not authorized to modify this order"
+
+                message:
+                    "You are not allowed to update this order."
             });
         }
 
-        // Do not allow changing pickup after preparation
-        if (
-            order.orderStatus === "Preparing" ||
-            order.orderStatus === "Ready" ||
-            order.orderStatus === "Completed" ||
-            order.orderStatus === "Cancelled"
-        ) {
+
+        // -------------------------------------------------
+        // ONLY RECEIVED ORDERS
+        // -------------------------------------------------
+
+        if (order.orderStatus !== "Received" || order.paymentStatus !== "paid") {
+
             return res.status(400).json({
+
                 success: false,
-                message: "Pickup slot cannot be changed at this stage"
+
+                message:
+                    "Pickup slot can only be changed for a paid order that is Received."
             });
         }
 
-        order.pickupSlot = {
-            date: pickupDate,
-            startTime,
-            endTime
-        };
 
-        await order.save();
+        const oldSlotId =
+            order.pickupSlot?.slotId;
 
-        return res.status(200).json({
+
+        // -------------------------------------------------
+        // SAME SLOT
+        // -------------------------------------------------
+
+        if (
+            oldSlotId?.toString() ===
+            slotId.toString()
+        ) {
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    "Pickup slot is already selected.",
+
+                data:
+                    order
+            });
+        }
+
+
+        // -------------------------------------------------
+        // RESERVE NEW SLOT
+        // -------------------------------------------------
+
+        await reservePickupSlot(
+            slotId
+        );
+
+
+        try {
+
+            order.pickupSlot = {
+
+                slotId:
+                    slotId
+            };
+
+
+            await order.save();
+
+
+            // Release old slot after successful save.
+
+            await releasePickupSlot(
+                oldSlotId
+            );
+
+
+        } catch (error) {
+
+            // New slot was reserved but order update failed.
+
+            await releasePickupSlot(
+                slotId
+            );
+
+            throw error;
+        }
+
+
+        // -------------------------------------------------
+        // GET UPDATED ORDER
+        // -------------------------------------------------
+
+        const updatedOrder =
+            await populateOrder(
+                Order.findById(
+                    order._id
+                )
+            );
+
+
+        return res.json({
+
             success: true,
-            message: "Pickup slot scheduled successfully",
-            data: {
-                orderId: order.orderId,
-                pickupSlot: order.pickupSlot
-            }
+
+            message:
+                "Pickup slot updated.",
+
+            data:
+                updatedOrder
         });
 
-    } catch (error) {
-        console.error("Update pickup slot error:", error);
 
-        return res.status(500).json({
+    } catch (error) {
+
+        console.error(
+            "updatePickupSlot:",
+            error
+        );
+
+
+        return res.status(400).json({
+
             success: false,
-            message: "Failed to schedule pickup slot",
-            error: error.message
+
+            message:
+                error.message ||
+                "Unable to update pickup slot."
         });
     }
 };
 
 
-const cancelOrder = async (req, res) => {
+// =========================================================
+// CANCEL ORDER
+// PUT /api/orders/:id/cancel
+// =========================================================
+
+const cancelOrder = async (
+    req,
+    res
+) => {
+
     try {
 
-        const order = await Order.findOne({
-            orderId: req.params.id
-        });
+        const user = req.user;
+
+        const orderIdParam =
+            req.params.id;
+
+        let order;
+
+
+        // -------------------------------------------------
+        // FIND ORDER
+        // -------------------------------------------------
+
+        if (
+            mongoose.Types.ObjectId.isValid(
+                orderIdParam
+            )
+        ) {
+
+            order =
+                await Order.findOne({
+
+                    $or: [
+
+                        {
+                            _id:
+                                orderIdParam
+                        },
+
+                        {
+                            orderId:
+                                orderIdParam
+                        }
+                    ]
+                });
+
+        } else {
+
+            order =
+                await Order.findOne({
+
+                    orderId:
+                        orderIdParam
+                });
+        }
+
+
+        // -------------------------------------------------
+        // ORDER NOT FOUND
+        // -------------------------------------------------
 
         if (!order) {
+
             return res.status(404).json({
+
                 success: false,
-                message: "Order not found"
+
+                message:
+                    "Order not found."
             });
         }
 
-        // Only orders before preparation can be cancelled
+
+        // -------------------------------------------------
+        // CHECK OWNER
+        // -------------------------------------------------
+
+        const isOwner =
+            order.userId.toString() ===
+            user.id.toString();
+
+        const isParticipant = order.isGroupOrder &&
+            order.participants?.some(
+                participant => participant.toString() === user.id.toString()
+            );
+
+
+        // -------------------------------------------------
+        // CHECK ADMIN / STAFF
+        // -------------------------------------------------
+
+        const isPrivileged =
+            [
+                "admin",
+                "staff"
+            ].includes(
+                user.role
+            );
+
+
+        // -------------------------------------------------
+        // AUTHORIZATION
+        // -------------------------------------------------
+
         if (
-            order.orderStatus === "Preparing" ||
-            order.orderStatus === "Ready" ||
-            order.orderStatus === "Completed"
+            !isOwner &&
+            !isParticipant &&
+            !isPrivileged
         ) {
-            return res.status(400).json({
+
+            return res.status(403).json({
+
                 success: false,
-                message: "Order cannot be cancelled at this stage"
+
+                message:
+                    "You are not allowed to cancel this order."
             });
         }
 
-        if (order.orderStatus === "Cancelled") {
+
+        // -------------------------------------------------
+        // ALREADY CANCELLED
+        // -------------------------------------------------
+
+        const wasAlreadyCancelled = order.orderStatus === "Cancelled";
+
+
+        // -------------------------------------------------
+        // ONLY RECEIVED ORDERS CAN BE CANCELLED
+        // -------------------------------------------------
+
+        if (!wasAlreadyCancelled && !["Received", "AwaitingPayment"].includes(order.orderStatus)) {
+
             return res.status(400).json({
+
                 success: false,
-                message: "Order is already cancelled"
+
+                message:
+                    "Order cannot be cancelled after preparation has started."
             });
         }
 
-        order.orderStatus = "Cancelled";
 
-        await order.save();
+        // -------------------------------------------------
+        // CANCEL ORDER
+        // -------------------------------------------------
+        //
+        // Do NOT use order.save() here.
+        //
+        // Older orders may not contain pickupSlot.slotId.
+        // Because pickupSlot.slotId is required in the
+        // schema, order.save() would validate the complete
+        // document and fail.
+        //
+        // updateOne() changes only orderStatus.
+        // -------------------------------------------------
 
-        return res.status(200).json({
+        if (!wasAlreadyCancelled) {
+            const cancellation = await Order.updateOne(
+                {
+                    _id: order._id,
+                    orderStatus: { $in: ["Received", "AwaitingPayment"] }
+                },
+                {
+                    $set: { orderStatus: "Cancelled" }
+                }
+            );
+
+            if (cancellation.modifiedCount !== 1) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Order status changed before it could be cancelled."
+                });
+            }
+        } else if (!order.isGroupOrder) {
+            return res.status(400).json({
+                success: false,
+                message: "Order is already cancelled."
+            });
+        }
+
+
+        // -------------------------------------------------
+        // RELEASE PICKUP SLOT
+        // -------------------------------------------------
+
+        if (!wasAlreadyCancelled) {
+            await releasePickupSlot(order.pickupSlot?.slotId);
+        }
+
+        let refundedShares = 0;
+        if (order.isGroupOrder) {
+            const paidShares = order.memberPayments.filter(
+                payment => payment.paid && !payment.refunded && payment.amount > 0
+            );
+
+            for (const share of paidShares) {
+                const claim = await Order.updateOne(
+                    {
+                        _id: order._id,
+                        orderStatus: "Cancelled",
+                        memberPayments: {
+                            $elemMatch: {
+                                userId: share.userId,
+                                paid: true,
+                                refunded: { $ne: true }
+                            }
+                        }
+                    },
+                    {
+                        $set: { "memberPayments.$.refunded": true }
+                    }
+                );
+
+                if (claim.modifiedCount !== 1) {
+                    continue;
+                }
+
+                let walletCredited = false;
+                try {
+                    const refundedUser = await User.findByIdAndUpdate(
+                        share.userId,
+                        { $inc: { wallet: share.amount } },
+                        { new: true }
+                    );
+
+                    if (!refundedUser) {
+                        throw new Error("A group member account was not found for a refund.");
+                    }
+                    walletCredited = true;
+
+                    await Transaction.create({
+                        transactionId: randomUUID(),
+                        userId: share.userId,
+                        orderId: order._id,
+                        amount: share.amount,
+                        paymentMethod: "refund"
+                    });
+                    refundedShares += 1;
+                } catch (refundError) {
+                    if (walletCredited) {
+                        await User.updateOne(
+                            { _id: share.userId },
+                            { $inc: { wallet: -share.amount } }
+                        );
+                    }
+
+                    await Order.updateOne(
+                        {
+                            _id: order._id,
+                            memberPayments: {
+                                $elemMatch: {
+                                    userId: share.userId,
+                                    refunded: true
+                                }
+                            }
+                        },
+                        {
+                            $set: { "memberPayments.$.refunded": false }
+                        }
+                    );
+                    throw refundError;
+                }
+            }
+
+            const updatedGroupOrder = await Order.findById(order._id);
+            const allPaidSharesRefunded = updatedGroupOrder.memberPayments.every(
+                payment => !payment.paid || payment.refunded
+            );
+
+            if (allPaidSharesRefunded) {
+                await Order.updateOne(
+                    { _id: order._id, orderStatus: "Cancelled" },
+                    { $set: { paymentStatus: "refunded" } }
+                );
+            }
+        }
+
+
+        // -------------------------------------------------
+        // GET UPDATED ORDER
+        // -------------------------------------------------
+
+        const updatedOrder =
+            await populateOrder(
+                Order.findById(
+                    order._id
+                )
+            );
+
+
+        // -------------------------------------------------
+        // RESPONSE
+        // -------------------------------------------------
+
+        return res.json({
+
             success: true,
-            message: "Order cancelled successfully",
-            data: order
+
+            message: order.isGroupOrder
+                ? `Group order cancelled. ${refundedShares} member share${refundedShares === 1 ? "" : "s"} refunded.`
+                : "Order cancelled successfully.",
+
+            data:
+                updatedOrder
         });
 
-    } catch (error) {
-        console.error("Cancel order error:", error);
 
-        return res.status(500).json({
+    } catch (error) {
+
+        console.error(
+            "cancelOrder:",
+            error
+        );
+
+
+        return res.status(400).json({
+
             success: false,
-            message: "Failed to cancel order",
-            error: error.message
+
+            message:
+                error.message ||
+                "Unable to cancel order."
         });
     }
 };
+
+
+// =========================================================
+// EXPORT
+// =========================================================
 
 module.exports = {
+
     createOrder,
+
     getMyOrders,
+
     getOrderById,
+
     getAllOrders,
+
     updateOrderStatus,
+
     cancelOrder,
+
     updatePickupSlot
 };

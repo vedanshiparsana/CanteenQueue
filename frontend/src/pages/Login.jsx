@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import "../styles/pages/Auth.css";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -40,7 +41,13 @@ const Login = () => {
             );
 
             if (data.success) {
-                navigate("/");
+                const role = String(data.user?.role || "").toLowerCase();
+                const destination = role === "admin"
+                    ? "/admin"
+                    : role === "student"
+                        ? "/student"
+                        : "/";
+                navigate(destination, { replace: true });
             } else {
                 setError(data.message || "Login failed.");
             }

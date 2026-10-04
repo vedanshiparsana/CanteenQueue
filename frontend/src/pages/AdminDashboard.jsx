@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "./AdminDashboard.css";
+import "../styles/pages/AdminDashboard.css";
 
 function AdminDashboard() {
     const navigate = useNavigate();

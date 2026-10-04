@@ -14,6 +14,8 @@ const orderRoutes = require("./routes/orderRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const userRoutes = require("./routes/userRoutes");
+const groupRoutes = require("./routes/groupRoutes");
+const pickupSlotRoutes = require("./routes/pickupSlotRoutes");
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -41,8 +43,6 @@ io.on("connection", (socket) => {
 app.use(cors());
 app.use(express.json());
 
-connectDB();
-
 app.get("/", (req, res) => {
     res.send("Backend is running");
 });
@@ -57,9 +57,13 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/pickup-slots", pickupSlotRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+connectDB().then(() => {
+    server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
 });

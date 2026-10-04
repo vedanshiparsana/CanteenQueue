@@ -1,0 +1,280 @@
+.student-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 250px;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    padding: 28px 18px;
+
+    background: var(--white);
+    border-right: 1px solid var(--border);
+
+    z-index: 100;
+}
+
+.student-sidebar-top {
+    min-height: 0;
+}
+
+/* =========================
+   BRAND
+========================= */
+
+.student-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 0 8px;
+    margin-bottom: 42px;
+}
+
+.student-sidebar-logo {
+    width: 44px;
+    height: 44px;
+
+    display: grid;
+    place-items: center;
+
+    flex-shrink: 0;
+}
+
+.student-sidebar-logo img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+    display: block;
+}
+
+.student-sidebar-brand h2 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+
+    font-size: 16px;
+    line-height: 1.2;
+
+    color: var(--green-dark);
+}
+
+.student-sidebar-brand span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.student-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.student-nav-item {
+    width: 100%;
+    min-height: 47px;
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    padding: 0 14px;
+
+    border: none;
+    border-radius: 13px;
+
+    background: transparent;
+    color: var(--text-muted);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-align: left;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.student-nav-item:hover {
+    background: var(--green-pale);
+    color: var(--green);
+
+    transform: translateX(2px);
+}
+
+.student-nav-item.active {
+    background: var(--green);
+    color: var(--white);
+}
+
+.student-nav-icon {
+    width: 23px;
+
+    display: grid;
+    place-items: center;
+
+    flex-shrink: 0;
+
+    font-size: 16px;
+}
+
+.student-nav-label {
+    white-space: nowrap;
+}
+
+/* =========================
+   USER AREA
+========================= */
+
+.student-sidebar-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.student-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 18px 8px 8px;
+
+    border-top: 1px solid var(--border);
+}
+
+.student-user-avatar {
+    width: 37px;
+    height: 37px;
+
+    display: grid;
+    place-items: center;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: var(--coral-light);
+    color: var(--coral);
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.student-user-info {
+    min-width: 0;
+}
+
+.student-user-info strong,
+.student-user-info span {
+    display: block;
+
+    max-width: 145px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.student-user-info strong {
+    color: var(--green-dark);
+    font-size: 12px;
+}
+
+.student-user-info span {
+    margin-top: 3px;
+
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+/* =========================
+   LOGOUT
+========================= */
+
+.student-logout {
+    width: 100%;
+    min-height: 42px;
+
+    border: 1px solid var(--border);
+    border-radius: 11px;
+
+    background: transparent;
+    color: var(--text-muted);
+
+    font-size: 12px;
+    font-weight: 700;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.student-logout:hover {
+    background: var(--coral-light);
+    border-color: var(--coral-light);
+
+    color: var(--coral);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .student-sidebar {
+        width: 76px;
+        padding: 20px 10px;
+    }
+
+    .student-sidebar-brand {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .student-sidebar-brand > div:last-child {
+        display: none;
+    }
+
+    .student-nav-item {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .student-nav-label {
+        display: none;
+    }
+
+    .student-sidebar-user {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .student-user-info {
+        display: none;
+    }
+
+    .student-logout {
+        font-size: 0;
+    }
+
+    .student-logout::before {
+        content: "↪";
+        font-size: 16px;
+    }
+}

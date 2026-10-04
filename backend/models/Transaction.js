@@ -19,6 +19,11 @@ const transactionSchema = new mongoose.Schema(
             ref: "Order"
         },
 
+        groupCode: {
+            type: String,
+            trim: true
+        },
+
         amount: {
             type: Number,
             required: true

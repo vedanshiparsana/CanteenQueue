@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import WalletCard from "../components/WalletCard";
-import "./Wallet.css";
+import "../styles/pages/Wallet.css";
 const Wallet = () => {
     const [wallet, setWallet] = useState(0);
     const [name, setName] = useState("");

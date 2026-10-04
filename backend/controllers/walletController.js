@@ -1,5 +1,44 @@
 const User = require("../models/User");
 const Order = require("../models/Order");
+const Transaction = require("../models/Transaction");
+const { randomUUID } = require("crypto");
+
+const createWalletTransaction = (details) => Transaction.create({
+    transactionId: randomUUID(),
+    ...details
+});
+
+const getWalletHistory = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            userId: req.user.userId
+        }).select("_id");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const transactions = await Transaction.find({
+            userId: user._id
+        })
+            .populate("orderId", "orderId groupCode")
+            .sort({ timestamp: -1 });
+
+        return res.status(200).json({
+            success: true,
+            data: transactions
+        });
+    } catch (error) {
+        console.error("Get wallet history error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch wallet history"
+        });
+    }
+};
 
 const getWalletBalance = async (req, res) => {
     try {
@@ -67,6 +106,11 @@ const topUpWallet = async (req, res) => {
         user.wallet += amount;
 
         await user.save();
+        await createWalletTransaction({
+            userId: user._id,
+            amount,
+            paymentMethod: "topup"
+        });
 
         return res.status(200).json({
             success: true,
@@ -106,6 +150,13 @@ const payFromWallet = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
+            });
+        }
+
+        if (order.isGroupOrder) {
+            return res.status(400).json({
+                success: false,
+                message: "Pay for a group order from your group's share details"
             });
         }
 
@@ -161,10 +212,19 @@ const payFromWallet = async (req, res) => {
 
         // Mark order as paid
         order.paymentStatus = "paid";
+        if (order.orderStatus === "AwaitingPayment") {
+            order.orderStatus = "Received";
+        }
 
         // Save both
         await user.save();
         await order.save();
+        await createWalletTransaction({
+            userId: user._id,
+            orderId: order._id,
+            amount,
+            paymentMethod: "wallet"
+        });
 
         return res.status(200).json({
             success: true,
@@ -205,6 +265,13 @@ const refundToWallet = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
+            });
+        }
+
+        if (order.isGroupOrder) {
+            return res.status(400).json({
+                success: false,
+                message: "Group order shares cannot be refunded as a single order payment"
             });
         }
 
@@ -251,6 +318,12 @@ const refundToWallet = async (req, res) => {
         order.paymentStatus = "refunded";
 
         await order.save();
+        await createWalletTransaction({
+            userId: user._id,
+            orderId: order._id,
+            amount: order.totalAmount,
+            paymentMethod: "refund"
+        });
 
         return res.status(200).json({
             success: true,
@@ -275,6 +348,7 @@ const refundToWallet = async (req, res) => {
 
 module.exports = {
     getWalletBalance,
+    getWalletHistory,
     topUpWallet,
     payFromWallet,
     refundToWallet

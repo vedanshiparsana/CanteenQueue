@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
-import "./InventoryAlerts.css";
-
+import "../styles/pages/InventoryAlerts.css";
 const InventoryAlerts = () => {
     const { user, loading: authLoading } = useAuth();
 

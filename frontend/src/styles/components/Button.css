@@ -1,0 +1,51 @@
+.cq-button {
+    border: none;
+    border-radius: 12px;
+    padding: 13px 22px;
+    font-weight: 700;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.cq-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.cq-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.cq-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cq-button-primary {
+    background: var(--coral);
+    color: var(--white);
+}
+
+.cq-button-primary:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(232, 117, 95, 0.22);
+}
+
+.cq-button-secondary {
+    background: var(--green);
+    color: var(--white);
+}
+
+.cq-button-secondary:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(47, 107, 79, 0.2);
+}
+
+.cq-button-outline {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid var(--green);
+}
+
+.cq-button-outline:hover:not(:disabled) {
+    background: var(--green-pale);
+}

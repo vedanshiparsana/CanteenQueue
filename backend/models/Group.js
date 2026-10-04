@@ -24,6 +24,13 @@ const groupItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const groupOrderSchema = new mongoose.Schema({
+    groupName: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 50
+    },
+
     groupCode: {
         type: String,
         unique: true,
@@ -68,7 +75,13 @@ const groupOrderSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["Open", "PaymentPending", "Completed", "Cancelled"],
+        enum: [
+            "Open",
+            "PaymentPending",
+            "Ordered",
+            "Completed",
+            "Cancelled"
+        ],
         default: "Open"
     },
 
@@ -78,10 +91,18 @@ const groupOrderSchema = new mongoose.Schema({
     },
 
     pickupSlot: {
-        date: Date,
-        startTime: String,
-        endTime: String
+        slotId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "PickupSlot",
+            default: null
+        }
     }
-}, { timestamps: true });
+}, {
+    timestamps: true
+});
 
-module.exports = mongoose.model("GroupOrder", groupOrderSchema);
+module.exports = mongoose.model(
+    "GroupOrder",
+    groupOrderSchema,
+    "groups"
+);

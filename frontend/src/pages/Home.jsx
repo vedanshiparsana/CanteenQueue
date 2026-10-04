@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import logo from "../assets/logo.png";
+import "../styles/pages/Home.css";
+import "../styles/components/Navbar.css";
+import "../styles/components/Footer.css";
 
 function Home() {
     const navigate = useNavigate();

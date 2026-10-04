@@ -3,6 +3,7 @@ const express = require("express");
 const {
     getAllUsers,
     getUserById,
+    updateMyProfile,
     updateUserRole,
     deleteUser
 } = require("../controllers/userController");
@@ -11,6 +12,12 @@ const authenticateUser = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
+
+router.put(
+    "/profile",
+    authenticateUser,
+    updateMyProfile
+);
 
 
 // Get all users

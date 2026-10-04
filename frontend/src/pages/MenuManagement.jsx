@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
-import "./MenuManagement.css";
-
+import "../styles/pages/MenuManagement.css";
 const emptyForm = {
     name: "",
     description: "",

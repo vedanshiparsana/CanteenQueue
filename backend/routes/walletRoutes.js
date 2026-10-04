@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
     getWalletBalance,
+    getWalletHistory,
     topUpWallet,
     payFromWallet,
     refundToWallet
@@ -13,6 +14,9 @@ const router = express.Router();
 
 // Get wallet balance
 router.get("/", authenticateUser, getWalletBalance);
+
+// Wallet activity history
+router.get("/history", authenticateUser, getWalletHistory);
 
 // Add money
 router.post("/topup", authenticateUser, topUpWallet);

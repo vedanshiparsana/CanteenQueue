@@ -9,15 +9,26 @@ import MenuManagement from "./pages/MenuManagement";
 import Inventory from "./pages/Inventory";
 import InventoryAlerts from "./pages/InventoryAlerts";
 import ProtectedRoute from "./components/ProtectedRoute";
+import StudentDashboard from "./pages/StudentDashboard";
 
 function App() {
     return (
         <Routes>
+
             <Route path="/" element={<Home />} />
 
             <Route path="/login" element={<Login />} />
 
             <Route path="/register" element={<Register />} />
+
+            <Route
+                path="/student"
+                element={
+                    <ProtectedRoute>
+                        <StudentDashboard />
+                    </ProtectedRoute>
+                }
+            />
 
             <Route
                 path="/wallet"
@@ -63,6 +74,7 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
         </Routes>
     );
 }
