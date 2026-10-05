@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import AdminSidebar from "../components/AdminSidebar";
 import "../styles/pages/Inventory.css";
+
 const emptyForm = {
     itemName: "",
     currentStockCount: "",
@@ -28,7 +30,7 @@ const Inventory = () => {
 
             const response = await api.get("/inventory");
 
-            setInventoryItems(response.data.data || []);
+            setInventoryItems(response.data?.data || []);
         } catch (error) {
             console.error("Inventory loading error:", error);
 
@@ -50,10 +52,10 @@ const Inventory = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        setFormData({
-            ...formData,
+        setFormData((current) => ({
+            ...current,
             [name]: value
-        });
+        }));
     };
 
     const resetForm = () => {
@@ -70,9 +72,9 @@ const Inventory = () => {
         setError("");
 
         if (
-            !formData.itemName ||
+            !formData.itemName.trim() ||
             formData.currentStockCount === "" ||
-            !formData.unitType
+            !formData.unitType.trim()
         ) {
             setError(
                 "Item name, stock count and unit type are required."
@@ -88,16 +90,18 @@ const Inventory = () => {
         try {
             setSaving(true);
 
+            const payload = {
+                itemName: formData.itemName.trim(),
+                currentStockCount: Number(
+                    formData.currentStockCount
+                ),
+                unitType: formData.unitType.trim()
+            };
+
             if (editingId) {
                 const response = await api.put(
                     `/inventory/${editingId}`,
-                    {
-                        itemName: formData.itemName,
-                        currentStockCount: Number(
-                            formData.currentStockCount
-                        ),
-                        unitType: formData.unitType
-                    }
+                    payload
                 );
 
                 setInventoryItems((currentItems) =>
@@ -114,13 +118,7 @@ const Inventory = () => {
             } else {
                 const response = await api.post(
                     "/inventory",
-                    {
-                        itemName: formData.itemName,
-                        currentStockCount: Number(
-                            formData.currentStockCount
-                        ),
-                        unitType: formData.unitType
-                    }
+                    payload
                 );
 
                 setInventoryItems((currentItems) => [
@@ -188,7 +186,8 @@ const Inventory = () => {
             );
 
             if (editingId === itemId) {
-                resetForm();
+                setFormData(emptyForm);
+                setEditingId(null);
             }
 
             setMessage(
@@ -205,361 +204,655 @@ const Inventory = () => {
     };
 
     const getStockStatus = (stock) => {
-        if (stock === 0) {
+        const numericStock = Number(stock);
+
+        if (numericStock === 0) {
             return {
-                label: "Out of Stock",
+                label: "Out of stock",
                 className: "out-of-stock"
             };
         }
 
-        if (stock <= 5) {
+        if (numericStock <= 5) {
             return {
-                label: "Low Stock",
+                label: "Low stock",
                 className: "low-stock"
             };
         }
 
         return {
-            label: "In Stock",
+            label: "In stock",
             className: "in-stock"
         };
     };
 
+    const stockSummary = useMemo(() => {
+        const total = inventoryItems.length;
+
+        const low = inventoryItems.filter(
+            (item) => {
+                const stock = Number(
+                    item.currentStockCount
+                );
+
+                return stock > 0 && stock <= 5;
+            }
+        ).length;
+
+        const out = inventoryItems.filter(
+            (item) =>
+                Number(item.currentStockCount) === 0
+        ).length;
+
+        const healthy = inventoryItems.filter(
+            (item) =>
+                Number(item.currentStockCount) > 5
+        ).length;
+
+        return {
+            total,
+            low,
+            out,
+            healthy
+        };
+    }, [inventoryItems]);
+
     if (authLoading) {
         return (
-            <div className="inventory-loading">
-                Loading inventory...
+            <div className="inventory-state-screen">
+                <div className="inventory-state-card">
+                    <div className="inventory-loading-spinner" />
+
+                    <h2>
+                        Loading inventory
+                    </h2>
+
+                    <p>
+                        Please wait while we prepare your
+                        inventory workspace.
+                    </p>
+                </div>
             </div>
         );
     }
 
     if (!user) {
         return (
-            <div className="inventory-access-message">
-                <h2>Login required</h2>
+            <div className="inventory-state-screen">
+                <div className="inventory-state-card">
+                    <div className="inventory-state-icon">
+                        !
+                    </div>
 
-                <p>
-                    Please login to access inventory management.
-                </p>
+                    <h2>
+                        Login required
+                    </h2>
+
+                    <p>
+                        Please login to access inventory
+                        management.
+                    </p>
+                </div>
             </div>
         );
     }
 
     if (user.role !== "admin") {
         return (
-            <div className="inventory-access-message">
-                <h2>Access denied</h2>
+            <div className="inventory-state-screen">
+                <div className="inventory-state-card">
+                    <div className="inventory-state-icon">
+                        !
+                    </div>
 
-                <p>
-                    Only administrators can access inventory management.
-                </p>
+                    <h2>
+                        Access denied
+                    </h2>
+
+                    <p>
+                        Only administrators can access
+                        inventory management.
+                    </p>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="inventory-page">
-            <div className="inventory-container">
-                <div className="inventory-header">
+            <AdminSidebar />
+
+            <main className="inventory-main">
+                <header className="inventory-topbar">
                     <div>
-                        <p className="inventory-eyebrow">
-                            CanteenQueue Admin
-                        </p>
-
-                        <h1>
+                        <p className="inventory-breadcrumb">
+                            Workspace
+                            <span>/</span>
                             Inventory
-                        </h1>
+                        </p>
 
-                        <p>
-                            Manage ingredients, stock levels and
-                            inventory availability.
+                        <p className="inventory-topbar-title">
+                            Stock & supplies management
                         </p>
                     </div>
 
-                    <div className="inventory-badge">
-                        ADMIN
-                    </div>
-                </div>
+                    <div className="inventory-topbar-user">
+                        <span className="inventory-online-dot" />
 
-                {error && (
-                    <div className="inventory-message error">
-                        {error}
-                    </div>
-                )}
+                        <span className="inventory-topbar-user-label">
+                            Admin account
+                        </span>
 
-                {message && (
-                    <div className="inventory-message success">
-                        {message}
+                        <div className="inventory-topbar-avatar">
+                            {(user.name || "A")
+                                .trim()
+                                .charAt(0)
+                                .toUpperCase()}
+                        </div>
                     </div>
-                )}
+                </header>
 
-                <div className="inventory-section">
-                    <div className="inventory-section-heading">
+                <div className="inventory-content">
+                    <section className="inventory-hero">
                         <div>
-                            <p className="inventory-section-label">
-                                Inventory Management
+                            <p className="inventory-eyebrow">
+                                INVENTORY CONTROL
                             </p>
 
-                            <h2>
-                                {editingId
-                                    ? `Edit Inventory Item (${editingId})`
-                                    : "Add Inventory Item"}
-                            </h2>
+                            <h1>
+                                Inventory
+                            </h1>
 
                             <p>
-                                Add or update stock information.
-                                The Item ID is generated automatically.
+                                Monitor ingredients, manage stock
+                                levels and keep your canteen ready
+                                for service.
                             </p>
                         </div>
-                    </div>
 
-                    <form
-                        className="inventory-form"
-                        onSubmit={handleSubmit}
-                    >
-                        <div className="inventory-form-title">
-                            {editingId
-                                ? `Editing ${editingId}`
-                                : "Add Inventory Item"}
-                        </div>
+                        <button
+                            type="button"
+                            className="inventory-refresh-button"
+                            onClick={loadInventory}
+                            disabled={loading}
+                        >
+                            <span>
+                                ↻
+                            </span>
 
-                        <div className="inventory-form-grid">
-                            <div className="inventory-form-group">
-                                <label>
-                                    Item Name *
-                                </label>
+                            {loading
+                                ? "Refreshing..."
+                                : "Refresh stock"}
+                        </button>
+                    </section>
 
-                                <input
-                                    name="itemName"
-                                    value={formData.itemName}
-                                    onChange={handleChange}
-                                    placeholder="Example: Rice"
-                                />
+                    <section className="inventory-stats">
+                        <article className="inventory-stat-card">
+                            <div className="inventory-stat-icon total">
+                                <span>▦</span>
                             </div>
 
-                            <div className="inventory-form-group">
-                                <label>
-                                    Current Stock Count *
-                                </label>
+                            <div>
+                                <span>
+                                    Total items
+                                </span>
 
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    name="currentStockCount"
-                                    value={
-                                        formData.currentStockCount
-                                    }
-                                    onChange={handleChange}
-                                    placeholder="Example: 20"
-                                />
+                                <strong>
+                                    {stockSummary.total}
+                                </strong>
+
+                                <small>
+                                    Items being monitored
+                                </small>
+                            </div>
+                        </article>
+
+                        <article className="inventory-stat-card">
+                            <div className="inventory-stat-icon healthy">
+                                <span>✓</span>
                             </div>
 
-                            <div className="inventory-form-group">
-                                <label>
-                                    Unit Type *
-                                </label>
+                            <div>
+                                <span>
+                                    Healthy stock
+                                </span>
 
-                                <input
-                                    name="unitType"
-                                    value={formData.unitType}
-                                    onChange={handleChange}
-                                    placeholder="Example: kg, litre, pieces"
-                                />
+                                <strong>
+                                    {stockSummary.healthy}
+                                </strong>
+
+                                <small>
+                                    More than 5 units
+                                </small>
                             </div>
-                        </div>
+                        </article>
 
-                        <div className="inventory-form-actions">
+                        <article className="inventory-stat-card warning">
+                            <div className="inventory-stat-icon low">
+                                <span>!</span>
+                            </div>
+
+                            <div>
+                                <span>
+                                    Low stock
+                                </span>
+
+                                <strong>
+                                    {stockSummary.low}
+                                </strong>
+
+                                <small>
+                                    1–5 units remaining
+                                </small>
+                            </div>
+                        </article>
+
+                        <article className="inventory-stat-card danger">
+                            <div className="inventory-stat-icon out">
+                                <span>×</span>
+                            </div>
+
+                            <div>
+                                <span>
+                                    Out of stock
+                                </span>
+
+                                <strong>
+                                    {stockSummary.out}
+                                </strong>
+
+                                <small>
+                                    Immediate attention
+                                </small>
+                            </div>
+                        </article>
+                    </section>
+
+                    {error && (
+                        <div
+                            className="inventory-message error"
+                            role="alert"
+                        >
+                            <span>!</span>
+
+                            <p>
+                                {error}
+                            </p>
+
                             <button
-                                type="submit"
-                                className="inventory-primary-button"
-                                disabled={saving}
+                                type="button"
+                                onClick={loadInventory}
+                                disabled={loading}
                             >
-                                {saving
-                                    ? "Saving..."
-                                    : editingId
-                                    ? "Update Item"
-                                    : "Add Item"}
+                                Try again
                             </button>
-
-                            {editingId && (
-                                <button
-                                    type="button"
-                                    className="inventory-secondary-button"
-                                    onClick={resetForm}
-                                >
-                                    Cancel Edit
-                                </button>
-                            )}
-                        </div>
-                    </form>
-                </div>
-
-                <div className="inventory-section">
-                    <div className="inventory-list-heading">
-                        <div>
-                            <p className="inventory-section-label">
-                                Current Inventory
-                            </p>
-
-                            <h2>
-                                Inventory Items
-                            </h2>
-                        </div>
-
-                        <span className="inventory-item-count">
-                            {inventoryItems.length} items
-                        </span>
-                    </div>
-
-                    {loading ? (
-                        <div className="inventory-empty">
-                            Loading inventory items...
-                        </div>
-                    ) : inventoryItems.length === 0 ? (
-                        <div className="inventory-empty">
-                            No inventory items found.
-                        </div>
-                    ) : (
-                        <div className="inventory-table-wrapper">
-                            <table className="inventory-table">
-                                <thead>
-                                    <tr>
-                                        <th>
-                                            Item ID
-                                        </th>
-
-                                        <th>
-                                            Item Name
-                                        </th>
-
-                                        <th>
-                                            Stock
-                                        </th>
-
-                                        <th>
-                                            Unit
-                                        </th>
-
-                                        <th>
-                                            Last Updated
-                                        </th>
-
-                                        <th>
-                                            Status
-                                        </th>
-
-                                        <th>
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {inventoryItems.map((item) => {
-                                        const stockStatus =
-                                            getStockStatus(
-                                                item.currentStockCount
-                                            );
-
-                                        return (
-                                            <tr
-                                                key={item.itemId}
-                                            >
-                                                <td>
-                                                    <strong>
-                                                        {item.itemId}
-                                                    </strong>
-                                                </td>
-
-                                                <td>
-                                                    <div className="inventory-item-name">
-                                                        {item.itemName}
-                                                    </div>
-                                                </td>
-
-                                                <td>
-                                                    <strong>
-                                                        {
-                                                            item.currentStockCount
-                                                        }
-                                                    </strong>
-                                                </td>
-
-                                                <td>
-                                                    {item.unitType}
-                                                </td>
-
-                                                <td>
-                                                    {item.lastUpdated
-                                                        ? new Date(
-                                                              item.lastUpdated
-                                                          ).toLocaleDateString()
-                                                        : "-"}
-                                                </td>
-
-                                                <td>
-                                                    <span
-                                                        className={`inventory-status ${stockStatus.className}`}
-                                                    >
-                                                        {
-                                                            stockStatus.label
-                                                        }
-                                                    </span>
-                                                </td>
-
-                                                <td>
-                                                    <div className="inventory-table-actions">
-                                                        <button
-                                                            className="inventory-edit-button"
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    item
-                                                                )
-                                                            }
-                                                        >
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            className="inventory-delete-button"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    item.itemId
-                                                                )
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
                         </div>
                     )}
+
+                    {message && (
+                        <div
+                            className="inventory-message success"
+                            role="status"
+                        >
+                            <span>✓</span>
+
+                            <p>
+                                {message}
+                            </p>
+                        </div>
+                    )}
+
+                    <section className="inventory-panel">
+                        <div className="inventory-panel-heading">
+                            <div className="inventory-panel-icon">
+                                {editingId ? "✎" : "+"}
+                            </div>
+
+                            <div>
+                                <p className="inventory-section-label">
+                                    {editingId
+                                        ? "UPDATE STOCK ITEM"
+                                        : "ADD NEW ITEM"}
+                                </p>
+
+                                <h2>
+                                    {editingId
+                                        ? `Edit ${editingId}`
+                                        : "Add inventory item"}
+                                </h2>
+
+                                <p>
+                                    {editingId
+                                        ? "Update the current stock information for this item."
+                                        : "Add an ingredient or supply to your inventory."}
+                                </p>
+                            </div>
+                        </div>
+
+                        <form
+                            className="inventory-form"
+                            onSubmit={handleSubmit}
+                        >
+                            <div className="inventory-form-grid">
+                                <div className="inventory-form-group">
+                                    <label htmlFor="itemName">
+                                        Item name
+                                    </label>
+
+                                    <input
+                                        id="itemName"
+                                        name="itemName"
+                                        value={formData.itemName}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Rice"
+                                    />
+                                </div>
+
+                                <div className="inventory-form-group">
+                                    <label htmlFor="currentStockCount">
+                                        Current stock
+                                    </label>
+
+                                    <input
+                                        id="currentStockCount"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        name="currentStockCount"
+                                        value={
+                                            formData.currentStockCount
+                                        }
+                                        onChange={handleChange}
+                                        placeholder="e.g. 20"
+                                    />
+                                </div>
+
+                                <div className="inventory-form-group">
+                                    <label htmlFor="unitType">
+                                        Unit type
+                                    </label>
+
+                                    <input
+                                        id="unitType"
+                                        name="unitType"
+                                        value={formData.unitType}
+                                        onChange={handleChange}
+                                        placeholder="e.g. kg, litre, pieces"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="inventory-form-footer">
+                                <p>
+                                    Item ID is generated automatically.
+                                </p>
+
+                                <div className="inventory-form-actions">
+                                    {editingId && (
+                                        <button
+                                            type="button"
+                                            className="inventory-secondary-button"
+                                            onClick={resetForm}
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        className="inventory-primary-button"
+                                        disabled={saving}
+                                    >
+                                        {saving
+                                            ? "Saving..."
+                                            : editingId
+                                            ? "Save changes"
+                                            : "Add item"}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+
+                    <section className="inventory-panel inventory-list-panel">
+                        <div className="inventory-list-heading">
+                            <div>
+                                <p className="inventory-section-label">
+                                    STOCK OVERVIEW
+                                </p>
+
+                                <h2>
+                                    Inventory items
+                                </h2>
+
+                                <p>
+                                    Review current stock and manage
+                                    individual items.
+                                </p>
+                            </div>
+
+                            <span className="inventory-item-count">
+                                {inventoryItems.length}{" "}
+                                {inventoryItems.length === 1
+                                    ? "item"
+                                    : "items"}
+                            </span>
+                        </div>
+
+                        {loading ? (
+                            <div className="inventory-empty">
+                                <div className="inventory-loading-spinner" />
+
+                                <strong>
+                                    Loading inventory
+                                </strong>
+
+                                <p>
+                                    Getting the latest stock information.
+                                </p>
+                            </div>
+                        ) : inventoryItems.length === 0 ? (
+                            <div className="inventory-empty">
+                                <div className="inventory-empty-icon">
+                                    ▦
+                                </div>
+
+                                <strong>
+                                    No inventory items yet
+                                </strong>
+
+                                <p>
+                                    Add your first inventory item using
+                                    the form above.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="inventory-table-wrapper">
+                                <table className="inventory-table">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                Item
+                                            </th>
+
+                                            <th>
+                                                Item ID
+                                            </th>
+
+                                            <th>
+                                                Current stock
+                                            </th>
+
+                                            <th>
+                                                Unit
+                                            </th>
+
+                                            <th>
+                                                Updated
+                                            </th>
+
+                                            <th>
+                                                Status
+                                            </th>
+
+                                            <th>
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {inventoryItems.map(
+                                            (item) => {
+                                                const stockStatus =
+                                                    getStockStatus(
+                                                        item.currentStockCount
+                                                    );
+
+                                                return (
+                                                    <tr
+                                                        key={
+                                                            item.itemId
+                                                        }
+                                                    >
+                                                        <td>
+                                                            <div className="inventory-item-cell">
+                                                                <div className="inventory-item-avatar">
+                                                                    {(
+                                                                        item.itemName ||
+                                                                        "I"
+                                                                    )
+                                                                        .charAt(
+                                                                            0
+                                                                        )
+                                                                        .toUpperCase()}
+                                                                </div>
+
+                                                                <strong>
+                                                                    {item.itemName ||
+                                                                        "Unnamed item"}
+                                                                </strong>
+                                                            </div>
+                                                        </td>
+
+                                                        <td>
+                                                            <span className="inventory-id">
+                                                                {item.itemId}
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <strong className="inventory-stock-number">
+                                                                {
+                                                                    item.currentStockCount
+                                                                }
+                                                            </strong>
+                                                        </td>
+
+                                                        <td>
+                                                            <span className="inventory-unit">
+                                                                {
+                                                                    item.unitType
+                                                                }
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <span className="inventory-date">
+                                                                {item.lastUpdated
+                                                                    ? new Date(
+                                                                          item.lastUpdated
+                                                                      ).toLocaleDateString(
+                                                                          undefined,
+                                                                          {
+                                                                              day: "2-digit",
+                                                                              month: "short",
+                                                                              year: "numeric"
+                                                                          }
+                                                                      )
+                                                                    : "-"}
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <span
+                                                                className={`inventory-status ${stockStatus.className}`}
+                                                            >
+                                                                <span />
+
+                                                                {
+                                                                    stockStatus.label
+                                                                }
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <div className="inventory-table-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="inventory-edit-button"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            item
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Edit
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="inventory-delete-button"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            item.itemId
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="inventory-alert-note">
+                        <div className="inventory-alert-icon">
+                            !
+                        </div>
+
+                        <div>
+                            <strong>
+                                Stock monitoring
+                            </strong>
+
+                            <p>
+                                Items with 5 or fewer units are
+                                considered low stock. Items at 0 are
+                                marked out of stock and will appear in
+                                the dashboard notifications.
+                            </p>
+                        </div>
+                    </section>
+
+                    <footer className="inventory-footer">
+                        <span>
+                            © {new Date().getFullYear()} CanteenQueue
+                        </span>
+
+                        <span>
+                            Keep campus dining running smoothly.
+                        </span>
+                    </footer>
                 </div>
-
-                <div className="inventory-info">
-                    <div className="inventory-info-icon">
-                        🔔
-                    </div>
-
-                    <div>
-                        <h3>
-                            Smart Inventory Alerts
-                        </h3>
-
-                        <p>
-                            Items with stock of 5 or below are
-                            automatically handled by the inventory
-                            alert system.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            </main>
         </div>
     );
 };

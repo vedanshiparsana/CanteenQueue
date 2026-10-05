@@ -1,0 +1,346 @@
+.admin-sidebar {
+    --sidebar-width: 264px;
+
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 100;
+    display: flex;
+    width: var(--sidebar-width);
+    height: 100vh;
+    flex-direction: column;
+    padding: 25px 18px 18px;
+    overflow-y: auto;
+    border-right: 1px solid #E2E5DE;
+    background: #FFFFFF;
+    color: #203027;
+    font-family: "DM Sans", sans-serif;
+}
+
+.admin-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 2px 6px 23px;
+    border: 0;
+    border-bottom: 1px solid #E2E5DE;
+    background: transparent;
+    color: #203027;
+    text-align: left;
+    cursor: pointer;
+}
+
+.admin-sidebar-brand img {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.admin-sidebar-brand-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.admin-sidebar-brand-copy strong {
+    color: #203027;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    line-height: 1.2;
+}
+
+.admin-sidebar-brand-copy strong span {
+    color: #2F6B4F;
+}
+
+.admin-sidebar-brand-copy small {
+    margin-top: 5px;
+    color: #7B8479;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.admin-sidebar-label {
+    margin: 27px 10px 12px;
+    color: #92988F;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+}
+
+.admin-sidebar-nav {
+    display: grid;
+    gap: 7px;
+}
+
+.admin-sidebar-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 49px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: #687168;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease;
+}
+
+.admin-sidebar-nav-link:hover {
+    background: #F3F7F1;
+    color: #2F6B4F;
+}
+
+.admin-sidebar-nav-link.active {
+    border-color: #D7E6D9;
+    background: #E8F0E9;
+    color: #203027;
+    font-weight: 750;
+}
+
+.admin-sidebar-nav-icon {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    place-items: center;
+    border-radius: 9px;
+    background: #F3F5F1;
+    color: #2F6B4F;
+}
+
+.admin-sidebar-nav-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.admin-sidebar-nav-link.active .admin-sidebar-nav-icon {
+    background: #2F6B4F;
+    color: #FFFFFF;
+}
+
+.admin-sidebar-nav-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-sidebar-nav-arrow {
+    margin-left: auto;
+    color: #A7AEA5;
+    font-size: 21px;
+    line-height: 1;
+}
+
+.admin-sidebar-nav-link.active .admin-sidebar-nav-arrow {
+    color: #2F6B4F;
+}
+
+.admin-sidebar-spacer {
+    flex: 1;
+    min-height: 28px;
+}
+
+/* .admin-sidebar-help {
+    margin-bottom: 22px;
+    padding: 16px 15px;
+    border: 1px solid #DBE8DC;
+    border-radius: 15px;
+    background: #E8F0E9;
+}
+
+.admin-sidebar-help-icon {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    margin-bottom: 11px;
+    place-items: center;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: #2F6B4F;
+} */
+
+.admin-sidebar-help-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-sidebar-help strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #203027;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.admin-sidebar-help p {
+    margin: 0;
+    color: #6F776F;
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.admin-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 4px;
+    border-top: 1px solid #E2E5DE;
+}
+
+.admin-sidebar-avatar {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border-radius: 50%;
+    background: #E8F0E9;
+    color: #2F6B4F;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.admin-sidebar-user-info {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.admin-sidebar-user-info strong {
+    overflow: hidden;
+    color: #203027;
+    font-size: 12px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-sidebar-user-info span {
+    color: #7A8279;
+    font-size: 10px;
+}
+
+.admin-sidebar-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #E2E5DE;
+    border-radius: 10px;
+    background: #FFFFFF;
+    color: #687168;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease;
+}
+
+.admin-sidebar-logout svg {
+    width: 16px;
+    height: 16px;
+}
+
+.admin-sidebar-logout:hover {
+    border-color: #F0CFC8;
+    background: #FFF3F0;
+    color: #A94F3D;
+}
+
+.admin-sidebar-brand:focus-visible,
+.admin-sidebar-nav-link:focus-visible,
+.admin-sidebar-logout:focus-visible {
+    outline: 3px solid #B9D6C2;
+    outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+    .admin-sidebar {
+        --sidebar-width: 220px;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-sidebar {
+        --sidebar-width: 72px;
+
+        align-items: center;
+        padding: 17px 8px 12px;
+    }
+
+    .admin-sidebar-brand {
+        justify-content: center;
+        padding: 0 0 18px;
+    }
+
+    .admin-sidebar-brand img {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+    }
+
+    .admin-sidebar-brand-copy,
+    .admin-sidebar-label,
+    .admin-sidebar-nav-text,
+    .admin-sidebar-nav-arrow,
+    .admin-sidebar-help,
+    .admin-sidebar-user-info,
+    .admin-sidebar-logout {
+        display: none;
+    }
+
+    .admin-sidebar-nav {
+        width: 100%;
+        margin-top: 22px;
+    }
+
+    .admin-sidebar-nav-link {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .admin-sidebar-nav-icon {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+    }
+
+    .admin-sidebar-nav-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .admin-sidebar-spacer {
+        min-height: 15px;
+    }
+
+    .admin-sidebar-user {
+        justify-content: center;
+        width: 100%;
+        padding: 13px 0 0;
+    }
+}
