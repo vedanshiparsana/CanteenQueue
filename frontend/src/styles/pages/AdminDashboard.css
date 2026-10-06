@@ -121,7 +121,7 @@
 
     border-radius: 22px;
 
-    background: #203027;
+    background: #294437;
 
     box-shadow: 0 12px 30px rgba(32, 48, 39, 0.08);
 }
@@ -382,7 +382,7 @@
 .admin-dashboard-content {
     display: grid;
 
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 1fr;
 
     gap: 18px;
 

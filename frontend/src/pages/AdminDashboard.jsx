@@ -184,8 +184,6 @@ function AdminDashboard() {
                             your admin workspace.
                         </p>
 
-                       
-
                     </div>
 
                     <div className="admin-welcome-decoration">
@@ -335,6 +333,7 @@ function AdminDashboard() {
 
                         {inventoryError ? (
                             <div className="admin-dashboard-error">
+
                                 <span>!</span>
 
                                 <div>
@@ -346,6 +345,7 @@ function AdminDashboard() {
                                         {inventoryError}
                                     </p>
                                 </div>
+
                             </div>
                         ) : (
                             <div className="admin-stock-overview">
@@ -353,6 +353,7 @@ function AdminDashboard() {
                                 <div className="admin-stock-row">
 
                                     <div className="admin-stock-info">
+
                                         <span className="admin-stock-dot green"></span>
 
                                         <div>
@@ -364,6 +365,7 @@ function AdminDashboard() {
                                                 More than 5 units
                                             </small>
                                         </div>
+
                                     </div>
 
                                     <strong className="admin-stock-number">
@@ -377,6 +379,7 @@ function AdminDashboard() {
                                 <div className="admin-stock-row">
 
                                     <div className="admin-stock-info">
+
                                         <span className="admin-stock-dot orange"></span>
 
                                         <div>
@@ -388,6 +391,7 @@ function AdminDashboard() {
                                                 1 to 5 units remaining
                                             </small>
                                         </div>
+
                                     </div>
 
                                     <strong className="admin-stock-number">
@@ -401,6 +405,7 @@ function AdminDashboard() {
                                 <div className="admin-stock-row">
 
                                     <div className="admin-stock-info">
+
                                         <span className="admin-stock-dot red"></span>
 
                                         <div>
@@ -412,6 +417,7 @@ function AdminDashboard() {
                                                 No stock available
                                             </small>
                                         </div>
+
                                     </div>
 
                                     <strong className="admin-stock-number">
@@ -424,86 +430,6 @@ function AdminDashboard() {
 
                             </div>
                         )}
-
-                    </div>
-
-                    {/* QUICK ACTIONS */}
-
-                    <div className="admin-dashboard-panel">
-
-                        <div className="admin-panel-header">
-
-                            <div>
-                                <span>
-                                    QUICK ACTIONS
-                                </span>
-
-                                <h2>
-                                    Manage Canteen
-                                </h2>
-
-                                <p>
-                                    Access your main admin tools.
-                                </p>
-                            </div>
-
-                        </div>
-
-                        <div className="admin-quick-actions">
-
-                            <button
-                                type="button"
-                                className="admin-quick-action"
-                                onClick={() =>
-                                    navigate("/admin/inventory")
-                                }
-                            >
-                                <div className="admin-quick-action-icon">
-                                    ▣
-                                </div>
-
-                                <div className="admin-quick-action-text">
-                                    <strong>
-                                        Inventory
-                                    </strong>
-
-                                    <span>
-                                        Manage stock and ingredients
-                                    </span>
-                                </div>
-
-                                <span className="admin-quick-action-arrow">
-                                    →
-                                </span>
-                            </button>
-
-                            <button
-                                type="button"
-                                className="admin-quick-action"
-                                onClick={() =>
-                                    navigate("/admin/menu")
-                                }
-                            >
-                                <div className="admin-quick-action-icon">
-                                    ☷
-                                </div>
-
-                                <div className="admin-quick-action-text">
-                                    <strong>
-                                        Menu Management
-                                    </strong>
-
-                                    <span>
-                                        Add and manage food items
-                                    </span>
-                                </div>
-
-                                <span className="admin-quick-action-arrow">
-                                    →
-                                </span>
-                            </button>
-
-                        </div>
 
                     </div>
 
@@ -571,6 +497,7 @@ function AdminDashboard() {
                             ]
                                 .slice(0, 5)
                                 .map((item) => {
+
                                     const status =
                                         getStockStatus(
                                             item.currentStockCount
@@ -581,6 +508,7 @@ function AdminDashboard() {
                                             className="admin-alert-item"
                                             key={item.itemId}
                                         >
+
                                             <div className="admin-alert-item-icon">
                                                 {status.className ===
                                                 "danger"
@@ -589,6 +517,7 @@ function AdminDashboard() {
                                             </div>
 
                                             <div className="admin-alert-item-info">
+
                                                 <strong>
                                                     {item.itemName}
                                                 </strong>
@@ -600,6 +529,7 @@ function AdminDashboard() {
                                                     }{" "}
                                                     remaining
                                                 </span>
+
                                             </div>
 
                                             <span
@@ -607,6 +537,7 @@ function AdminDashboard() {
                                             >
                                                 {status.label}
                                             </span>
+
                                         </div>
                                     );
                                 })}
@@ -675,6 +606,7 @@ function AdminDashboard() {
                                 .slice(-5)
                                 .reverse()
                                 .map((item) => {
+
                                     const status =
                                         getStockStatus(
                                             item.currentStockCount
@@ -685,6 +617,7 @@ function AdminDashboard() {
                                             className="admin-recent-item"
                                             key={item.itemId}
                                         >
+
                                             <div className="admin-recent-item-icon">
                                                 {item.itemName
                                                     ?.charAt(0)
@@ -693,6 +626,7 @@ function AdminDashboard() {
                                             </div>
 
                                             <div className="admin-recent-item-info">
+
                                                 <strong>
                                                     {item.itemName}
                                                 </strong>
@@ -700,9 +634,11 @@ function AdminDashboard() {
                                                 <span>
                                                     {item.itemId}
                                                 </span>
+
                                             </div>
 
                                             <div className="admin-recent-stock">
+
                                                 <strong>
                                                     {
                                                         item.currentStockCount
@@ -714,6 +650,7 @@ function AdminDashboard() {
                                                         item.unitType
                                                     }
                                                 </span>
+
                                             </div>
 
                                             <span
@@ -721,6 +658,7 @@ function AdminDashboard() {
                                             >
                                                 {status.label}
                                             </span>
+
                                         </div>
                                     );
                                 })}
@@ -733,6 +671,7 @@ function AdminDashboard() {
                 {/* FOOTER */}
 
                 <footer className="admin-dashboard-footer">
+
                     <span>
                         CanteenQueue Admin
                     </span>
@@ -740,6 +679,7 @@ function AdminDashboard() {
                     <span>
                         Smart Campus Canteen Management Platform
                     </span>
+
                 </footer>
 
             </main>

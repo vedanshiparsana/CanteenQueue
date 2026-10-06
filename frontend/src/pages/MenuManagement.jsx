@@ -5,25 +5,12 @@ import api from "../services/api";
 import AdminSidebar from "../components/AdminSidebar";
 import "../styles/pages/MenuManagement.css";
 
-const emptyForm = {
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    imageUrl: "",
-    isAvailable: true,
-};
-
 function MenuManagement() {
     const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
 
     const [menuItems, setMenuItems] = useState([]);
-    const [formData, setFormData] = useState(emptyForm);
-    const [editingId, setEditingId] = useState(null);
-
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
 
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -35,9 +22,12 @@ function MenuManagement() {
 
             const response = await api.get("/menu");
 
-            setMenuItems(response.data.data || []);
+            setMenuItems(response.data?.data || []);
         } catch (requestError) {
-            console.error("Menu loading error:", requestError);
+            console.error(
+                "Menu loading error:",
+                requestError
+            );
 
             setError(
                 requestError.response?.data?.message ||
@@ -53,115 +43,6 @@ function MenuManagement() {
             loadMenu();
         }
     }, [authLoading, user]);
-
-    const handleChange = (event) => {
-        const { name, value, type, checked } = event.target;
-
-        setFormData((current) => ({
-            ...current,
-            [name]: type === "checkbox" ? checked : value,
-        }));
-    };
-
-    const resetForm = () => {
-        setFormData(emptyForm);
-        setEditingId(null);
-        setMessage("");
-        setError("");
-    };
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-
-        setMessage("");
-        setError("");
-
-        if (!formData.name.trim() || !formData.category.trim()) {
-            setError("Item name and category are required.");
-            return;
-        }
-
-        if (formData.price === "" || Number(formData.price) < 0) {
-            setError("Please enter a valid price.");
-            return;
-        }
-
-        const payload = {
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            price: Number(formData.price),
-            category: formData.category.trim(),
-            imageUrl: formData.imageUrl.trim(),
-            isAvailable: formData.isAvailable,
-        };
-
-        try {
-            setSaving(true);
-
-            if (editingId) {
-                const response = await api.put(
-                    `/menu/${editingId}`,
-                    payload
-                );
-
-                setMenuItems((current) =>
-                    current.map((item) =>
-                        item.menuId === editingId
-                            ? response.data.data
-                            : item
-                    )
-                );
-
-                setMessage("Menu item updated successfully.");
-            } else {
-                const response = await api.post("/menu", payload);
-
-                const newItem = response.data.data;
-
-                setMenuItems((current) => [
-                    ...current,
-                    newItem,
-                ]);
-
-                setMessage(
-                    `Menu item ${newItem.menuId} added successfully.`
-                );
-            }
-
-            setFormData(emptyForm);
-            setEditingId(null);
-        } catch (requestError) {
-            console.error("Menu save error:", requestError);
-
-            setError(
-                requestError.response?.data?.message ||
-                    "Unable to save menu item."
-            );
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleEdit = (item) => {
-        setEditingId(item.menuId);
-
-        setFormData({
-            name: item.name || "",
-            description: item.description || "",
-            price: item.price ?? "",
-            category: item.category || "",
-            imageUrl: item.imageUrl || "",
-            isAvailable: item.isAvailable ?? true,
-        });
-
-        setMessage("");
-        setError("");
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-        });
-    };
 
     const handleDelete = async (menuId) => {
         const confirmed = window.confirm(
@@ -184,14 +65,14 @@ function MenuManagement() {
                 )
             );
 
-            if (editingId === menuId) {
-                setFormData(emptyForm);
-                setEditingId(null);
-            }
-
-            setMessage("Menu item deleted successfully.");
+            setMessage(
+                "Menu item deleted successfully."
+            );
         } catch (requestError) {
-            console.error("Menu delete error:", requestError);
+            console.error(
+                "Menu delete error:",
+                requestError
+            );
 
             setError(
                 requestError.response?.data?.message ||
@@ -220,9 +101,17 @@ function MenuManagement() {
         return (
             <div className="menu-state-screen">
                 <div className="menu-state-card">
-                    <div className="menu-state-icon">🍽</div>
-                    <h2>Loading menu management...</h2>
-                    <p>Please wait.</p>
+                    <div className="menu-state-icon">
+                        🍽
+                    </div>
+
+                    <h2>
+                        Loading menu management...
+                    </h2>
+
+                    <p>
+                        Please wait.
+                    </p>
                 </div>
             </div>
         );
@@ -232,15 +121,24 @@ function MenuManagement() {
         return (
             <div className="menu-state-screen">
                 <div className="menu-state-card">
-                    <div className="menu-state-icon">🔐</div>
-                    <h2>Login required</h2>
+                    <div className="menu-state-icon">
+                        🔐
+                    </div>
+
+                    <h2>
+                        Login required
+                    </h2>
+
                     <p>
-                        Please login to access menu management.
+                        Please login to access menu
+                        management.
                     </p>
 
                     <button
                         type="button"
-                        onClick={() => navigate("/login")}
+                        onClick={() =>
+                            navigate("/login")
+                        }
                     >
                         Go to Login
                     </button>
@@ -253,15 +151,24 @@ function MenuManagement() {
         return (
             <div className="menu-state-screen">
                 <div className="menu-state-card">
-                    <div className="menu-state-icon">⛔</div>
-                    <h2>Access Denied</h2>
+                    <div className="menu-state-icon">
+                        ⛔
+                    </div>
+
+                    <h2>
+                        Access Denied
+                    </h2>
+
                     <p>
-                        Only administrators can manage menu items.
+                        Only administrators can manage
+                        menu items.
                     </p>
 
                     <button
                         type="button"
-                        onClick={() => navigate("/")}
+                        onClick={() =>
+                            navigate("/")
+                        }
                     >
                         Return Home
                     </button>
@@ -276,8 +183,6 @@ function MenuManagement() {
 
             <main className="menu-main">
                 <div className="menu-content">
-
-                    {/* Header */}
                     <header className="menu-page-header">
                         <div>
                             <p className="menu-eyebrow">
@@ -285,8 +190,7 @@ function MenuManagement() {
                             </p>
 
                             <h1>
-                                Manage your{" "}
-                                <span>menu</span>
+                                Manage your <span>menu</span>
                             </h1>
 
                             <p className="menu-page-subtitle">
@@ -301,7 +205,6 @@ function MenuManagement() {
                         </div>
                     </header>
 
-                    {/* Messages */}
                     {error && (
                         <div
                             className="menu-message menu-error"
@@ -309,6 +212,14 @@ function MenuManagement() {
                         >
                             <span>!</span>
                             {error}
+
+                            <button
+                                type="button"
+                                onClick={loadMenu}
+                                disabled={loading}
+                            >
+                                Try again
+                            </button>
                         </div>
                     )}
 
@@ -322,7 +233,6 @@ function MenuManagement() {
                         </div>
                     )}
 
-                    {/* Stats */}
                     <section className="menu-stats">
                         <div className="menu-stat-card">
                             <div className="menu-stat-icon">
@@ -330,8 +240,13 @@ function MenuManagement() {
                             </div>
 
                             <div>
-                                <span>Total Items</span>
-                                <strong>{totalItems}</strong>
+                                <span>
+                                    Total Items
+                                </span>
+
+                                <strong>
+                                    {totalItems}
+                                </strong>
                             </div>
                         </div>
 
@@ -341,8 +256,13 @@ function MenuManagement() {
                             </div>
 
                             <div>
-                                <span>Available</span>
-                                <strong>{availableItems}</strong>
+                                <span>
+                                    Available
+                                </span>
+
+                                <strong>
+                                    {availableItems}
+                                </strong>
                             </div>
                         </div>
 
@@ -352,8 +272,13 @@ function MenuManagement() {
                             </div>
 
                             <div>
-                                <span>Unavailable</span>
-                                <strong>{unavailableItems}</strong>
+                                <span>
+                                    Unavailable
+                                </span>
+
+                                <strong>
+                                    {unavailableItems}
+                                </strong>
                             </div>
                         </div>
 
@@ -363,188 +288,17 @@ function MenuManagement() {
                             </div>
 
                             <div>
-                                <span>Categories</span>
-                                <strong>{categories}</strong>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Add / Edit Form */}
-                    <section className="menu-panel">
-                        <div className="menu-panel-header">
-                            <div>
-                                <p className="menu-section-label">
-                                    {editingId
-                                        ? "EDIT MENU ITEM"
-                                        : "NEW MENU ITEM"}
-                                </p>
-
-                                <h2>
-                                    {editingId
-                                        ? "Update menu item"
-                                        : "Add a menu item"}
-                                </h2>
-
-                                <p>
-                                    Keep your canteen menu accurate
-                                    and up to date.
-                                </p>
-                            </div>
-
-                            <div className="menu-panel-icon">
-                                {editingId ? "✎" : "+"}
-                            </div>
-                        </div>
-
-                        {editingId && (
-                            <div className="menu-editing-note">
-                                <span>✎</span>
-                                Editing Menu ID:
-                                <strong>{editingId}</strong>
-                            </div>
-                        )}
-
-                        <form
-                            className="menu-form"
-                            onSubmit={handleSubmit}
-                        >
-                            <div className="menu-form-grid">
-
-                                <div className="menu-form-group">
-                                    <label htmlFor="menu-name">
-                                        Item Name *
-                                    </label>
-
-                                    <input
-                                        id="menu-name"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        placeholder="Example: Veg Sandwich"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="menu-form-group">
-                                    <label htmlFor="menu-category">
-                                        Category *
-                                    </label>
-
-                                    <input
-                                        id="menu-category"
-                                        name="category"
-                                        value={formData.category}
-                                        onChange={handleChange}
-                                        placeholder="Example: Snacks"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="menu-form-group">
-                                    <label htmlFor="menu-price">
-                                        Price (₹) *
-                                    </label>
-
-                                    <input
-                                        id="menu-price"
-                                        name="price"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={formData.price}
-                                        onChange={handleChange}
-                                        placeholder="Example: 80"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="menu-form-group">
-                                    <label htmlFor="menu-image">
-                                        Image URL
-                                    </label>
-
-                                    <input
-                                        id="menu-image"
-                                        name="imageUrl"
-                                        type="url"
-                                        value={formData.imageUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/image.jpg"
-                                    />
-                                </div>
-
-                                <div className="menu-form-group menu-form-full">
-                                    <label htmlFor="menu-description">
-                                        Description
-                                    </label>
-
-                                    <textarea
-                                        id="menu-description"
-                                        name="description"
-                                        value={formData.description}
-                                        onChange={handleChange}
-                                        placeholder="Describe the menu item..."
-                                        rows="3"
-                                    />
-                                </div>
-
-                            </div>
-
-                            {/* Availability */}
-                            <label className="menu-availability">
-                                <input
-                                    type="checkbox"
-                                    name="isAvailable"
-                                    checked={formData.isAvailable}
-                                    onChange={handleChange}
-                                />
-
-                                <span className="menu-toggle" />
-
-                                <span className="menu-availability-text">
-                                    <strong>
-                                        Available for students
-                                    </strong>
-
-                                    <small>
-                                        Students can see and order
-                                        this item.
-                                    </small>
+                                <span>
+                                    Categories
                                 </span>
-                            </label>
 
-                            {/* Buttons */}
-                            <div className="menu-form-actions">
-                                <button
-                                    type="submit"
-                                    className="menu-primary-button"
-                                    disabled={saving}
-                                >
-                                    {saving
-                                        ? "Saving..."
-                                        : editingId
-                                        ? "Update Menu Item"
-                                        : "Add Menu Item"}
-
-                                    {!saving && (
-                                        <span>→</span>
-                                    )}
-                                </button>
-
-                                {editingId && (
-                                    <button
-                                        type="button"
-                                        className="menu-secondary-button"
-                                        onClick={resetForm}
-                                    >
-                                        Cancel Edit
-                                    </button>
-                                )}
+                                <strong>
+                                    {categories}
+                                </strong>
                             </div>
-                        </form>
+                        </div>
                     </section>
 
-                    {/* Menu List */}
                     <section className="menu-panel menu-list-panel">
                         <div className="menu-list-header">
                             <div>
@@ -562,14 +316,33 @@ function MenuManagement() {
                                 </p>
                             </div>
 
-                            <div className="menu-item-count">
-                                {menuItems.length} items
+                            <div>
+                                <button
+                                    type="button"
+                                    className="menu-primary-button"
+                                    onClick={() =>
+                                        navigate(
+                                            "/admin/menu/add"
+                                        )
+                                    }
+                                >
+                                    Add Menu Item →
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="menu-list-header">
+                            <div>
+                                <span className="menu-item-count">
+                                    {menuItems.length} items
+                                </span>
                             </div>
                         </div>
 
                         {loading ? (
                             <div className="menu-empty-state">
                                 <div className="menu-loading-spinner" />
+
                                 <p>
                                     Loading menu items...
                                 </p>
@@ -586,7 +359,7 @@ function MenuManagement() {
 
                                 <p>
                                     Add your first menu item using
-                                    the form above.
+                                    the Add Menu Item button above.
                                 </p>
                             </div>
                         ) : (
@@ -605,17 +378,25 @@ function MenuManagement() {
 
                                     <tbody>
                                         {menuItems.map((item) => (
-                                            <tr key={item.menuId}>
+                                            <tr
+                                                key={
+                                                    item.menuId
+                                                }
+                                            >
                                                 <td>
                                                     <span className="menu-id">
-                                                        {item.menuId}
+                                                        {
+                                                            item.menuId
+                                                        }
                                                     </span>
                                                 </td>
 
                                                 <td>
                                                     <div className="menu-table-item">
                                                         <strong>
-                                                            {item.name}
+                                                            {
+                                                                item.name
+                                                            }
                                                         </strong>
 
                                                         {item.description && (
@@ -630,7 +411,9 @@ function MenuManagement() {
 
                                                 <td>
                                                     <span className="menu-category">
-                                                        {item.category}
+                                                        {
+                                                            item.category
+                                                        }
                                                     </span>
                                                 </td>
 
@@ -650,6 +433,7 @@ function MenuManagement() {
                                                         }`}
                                                     >
                                                         <span />
+
                                                         {item.isAvailable
                                                             ? "Available"
                                                             : "Unavailable"}
@@ -662,8 +446,8 @@ function MenuManagement() {
                                                             type="button"
                                                             className="menu-edit-button"
                                                             onClick={() =>
-                                                                handleEdit(
-                                                                    item
+                                                                navigate(
+                                                                    `/admin/menu/edit/${item.menuId}`
                                                                 )
                                                             }
                                                         >
@@ -691,7 +475,6 @@ function MenuManagement() {
                         )}
                     </section>
 
-                    {/* Footer */}
                     <footer className="menu-footer">
                         <span>
                             CanteenQueue Admin
