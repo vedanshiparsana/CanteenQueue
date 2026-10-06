@@ -52,7 +52,7 @@ function AdminSidebar() {
                         strokeWidth="1.8"
                     />
                 </svg>
-            )
+            ),
         },
         {
             id: "inventory",
@@ -73,7 +73,7 @@ function AdminSidebar() {
                         strokeLinejoin="round"
                     />
                 </svg>
-            )
+            ),
         },
         {
             id: "menu",
@@ -95,13 +95,37 @@ function AdminSidebar() {
                         strokeWidth="1.8"
                     />
                 </svg>
-            )
-        }
+            ),
+        },
+        {
+            id: "analytics",
+            label: "Sales Analytics",
+            path: "/admin/analytics",
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                        d="M5 19V10M12 19V5M19 19v-7"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                    />
+                    <path
+                        d="M3 19h18"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                    />
+                </svg>
+            ),
+        },
     ];
 
     const isActive = (path) => {
         if (path === "/admin") {
-            return location.pathname === "/admin" || location.pathname === "/admin/";
+            return (
+                location.pathname === "/admin" ||
+                location.pathname === "/admin/"
+            );
         }
 
         return location.pathname.startsWith(path);
@@ -164,8 +188,6 @@ function AdminSidebar() {
             </nav>
 
             <div className="admin-sidebar-spacer" />
-
-            
 
             <div className="admin-sidebar-user">
                 <div className="admin-sidebar-avatar">

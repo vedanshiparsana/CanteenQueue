@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 const api = axios.create({
@@ -20,5 +19,18 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+
+// Sales Analytics APIs
+export const getSalesAnalytics = () => {
+    return api.get("/analytics/sales");
+};
+
+export const getPopularItems = () => {
+    return api.get("/analytics/popular-items");
+};
+
+export const getAnalyticsSummary = () => {
+    return api.get("/analytics/summary");
+};
 
 export default api;

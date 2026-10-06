@@ -4,15 +4,13 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Wallet from "./pages/Wallet";
-
 import AdminDashboard from "./pages/AdminDashboard";
 import MenuManagement from "./pages/MenuManagement";
 import Inventory from "./pages/Inventory";
 import InventoryAlerts from "./pages/InventoryAlerts";
-
 import InventoryForm from "./pages/InventoryForm";
 import MenuItemForm from "./pages/menuitemForm";
-
+import SalesAnalytics from "./pages/SalesAnalytics";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentDashboard from "./pages/StudentDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
@@ -20,26 +18,11 @@ import StaffDashboard from "./pages/StaffDashboard";
 function App() {
     return (
         <Routes>
+            <Route path="/" element={<Home />} />
 
-            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-            <Route
-                path="/"
-                element={<Home />}
-            />
-
-            <Route
-                path="/login"
-                element={<Login />}
-            />
-
-            <Route
-                path="/register"
-                element={<Register />}
-            />
-
-
-            {/* Student Routes */}
+            <Route path="/register" element={<Register />} />
 
             <Route
                 path="/student"
@@ -68,9 +51,6 @@ function App() {
                 }
             />
 
-
-            {/* Admin Dashboard */}
-
             <Route
                 path="/admin"
                 element={
@@ -79,9 +59,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
-
-            {/* Menu Management */}
 
             <Route
                 path="/admin/menu"
@@ -92,8 +69,6 @@ function App() {
                 }
             />
 
-            {/* Add Menu Item */}
-
             <Route
                 path="/admin/menu/add"
                 element={
@@ -102,8 +77,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
-            {/* Edit Menu Item */}
 
             <Route
                 path="/admin/menu/edit/:menuId"
@@ -114,9 +87,6 @@ function App() {
                 }
             />
 
-
-            {/* Inventory Management */}
-
             <Route
                 path="/admin/inventory"
                 element={
@@ -125,8 +95,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
-            {/* Add Inventory Item */}
 
             <Route
                 path="/admin/inventory/add"
@@ -137,8 +105,6 @@ function App() {
                 }
             />
 
-            {/* Edit Inventory Item */}
-
             <Route
                 path="/admin/inventory/edit/:itemId"
                 element={
@@ -147,9 +113,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
-
-            {/* Inventory Alerts */}
 
             <Route
                 path="/admin/alerts"
@@ -160,6 +123,14 @@ function App() {
                 }
             />
 
+            <Route
+                path="/admin/analytics"
+                element={
+                    <ProtectedRoute>
+                        <SalesAnalytics />
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
     );
 }
