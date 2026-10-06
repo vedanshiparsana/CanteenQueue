@@ -919,3 +919,46 @@
         transition: none !important;
     }
 }
+
+/* Inventory Search */
+.inventory-list-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.inventory-search-input {
+    width: 240px;
+    padding: 10px 14px;
+    border: 1px solid #d9e2dc;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #17352a;
+    font-size: 14px;
+    outline: none;
+}
+
+.inventory-search-input::placeholder {
+    color: #8a9991;
+}
+
+.inventory-search-input:focus {
+    border-color: #087f5b;
+    box-shadow: 0 0 0 3px rgba(8, 127, 91, 0.1);
+}
+
+@media (max-width: 700px) {
+    .inventory-list-heading {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inventory-list-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .inventory-search-input {
+        width: 100%;
+    }
+}

@@ -13,6 +13,7 @@ const Inventory = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     const loadInventory = async () => {
         try {
@@ -123,6 +124,28 @@ const Inventory = () => {
             healthy
         };
     }, [inventoryItems]);
+
+    const filteredInventoryItems = useMemo(() => {
+        const search = searchTerm.trim().toLowerCase();
+
+        if (!search) {
+            return inventoryItems;
+        }
+
+        return inventoryItems.filter((item) => {
+            return (
+                item.itemName
+                    ?.toLowerCase()
+                    .includes(search) ||
+                item.itemId
+                    ?.toLowerCase()
+                    .includes(search) ||
+                item.unitType
+                    ?.toLowerCase()
+                    .includes(search)
+            );
+        });
+    }, [inventoryItems, searchTerm]);
 
     if (authLoading) {
         return (
@@ -367,12 +390,24 @@ const Inventory = () => {
                                 </p>
                             </div>
 
-                            <span className="inventory-item-count">
-                                {inventoryItems.length}{" "}
-                                {inventoryItems.length === 1
-                                    ? "item"
-                                    : "items"}
-                            </span>
+                            <div className="inventory-list-controls">
+                                <input
+                                    type="text"
+                                    className="inventory-search-input"
+                                    placeholder="Search inventory..."
+                                    value={searchTerm}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                />
+
+                                <span className="inventory-item-count">
+                                    {filteredInventoryItems.length}{" "}
+                                    {filteredInventoryItems.length === 1
+                                        ? "item"
+                                        : "items"}
+                                </span>
+                            </div>
                         </div>
 
                         {loading ? (
@@ -402,6 +437,21 @@ const Inventory = () => {
                                     the Add item button above.
                                 </p>
                             </div>
+                        ) : filteredInventoryItems.length === 0 ? (
+                            <div className="inventory-empty">
+                                <div className="inventory-empty-icon">
+                                    🔍
+                                </div>
+
+                                <strong>
+                                    No matching inventory items
+                                </strong>
+
+                                <p>
+                                    Try searching with a different
+                                    item name, ID or unit type.
+                                </p>
+                            </div>
                         ) : (
                             <div className="inventory-table-wrapper">
                                 <table className="inventory-table">
@@ -418,107 +468,114 @@ const Inventory = () => {
                                     </thead>
 
                                     <tbody>
-                                        {inventoryItems.map((item) => {
-                                            const stockStatus =
-                                                getStockStatus(
-                                                    item.currentStockCount
-                                                );
+                                        {filteredInventoryItems.map(
+                                            (item) => {
+                                                const stockStatus =
+                                                    getStockStatus(
+                                                        item.currentStockCount
+                                                    );
 
-                                            return (
-                                                <tr key={item.itemId}>
-                                                    <td>
-                                                        <div className="inventory-item-cell">
-                                                            <div className="inventory-item-avatar">
-                                                                {(item.itemName || "I")
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
+                                                return (
+                                                    <tr
+                                                        key={item.itemId}
+                                                    >
+                                                        <td>
+                                                            <div className="inventory-item-cell">
+                                                                <div className="inventory-item-avatar">
+                                                                    {(
+                                                                        item.itemName ||
+                                                                        "I"
+                                                                    )
+                                                                        .charAt(0)
+                                                                        .toUpperCase()}
+                                                                </div>
+
+                                                                <strong>
+                                                                    {item.itemName ||
+                                                                        "Unnamed item"}
+                                                                </strong>
                                                             </div>
+                                                        </td>
 
-                                                            <strong>
-                                                                {item.itemName ||
-                                                                    "Unnamed item"}
+                                                        <td>
+                                                            <span className="inventory-id">
+                                                                {item.itemId}
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <strong className="inventory-stock-number">
+                                                                {
+                                                                    item.currentStockCount
+                                                                }
                                                             </strong>
-                                                        </div>
-                                                    </td>
+                                                        </td>
 
-                                                    <td>
-                                                        <span className="inventory-id">
-                                                            {item.itemId}
-                                                        </span>
-                                                    </td>
+                                                        <td>
+                                                            <span className="inventory-unit">
+                                                                {item.unitType}
+                                                            </span>
+                                                        </td>
 
-                                                    <td>
-                                                        <strong className="inventory-stock-number">
-                                                            {
-                                                                item.currentStockCount
-                                                            }
-                                                        </strong>
-                                                    </td>
+                                                        <td>
+                                                            <span className="inventory-date">
+                                                                {item.lastUpdated
+                                                                    ? new Date(
+                                                                          item.lastUpdated
+                                                                      ).toLocaleDateString(
+                                                                          undefined,
+                                                                          {
+                                                                              day: "2-digit",
+                                                                              month: "short",
+                                                                              year: "numeric"
+                                                                          }
+                                                                      )
+                                                                    : "-"}
+                                                            </span>
+                                                        </td>
 
-                                                    <td>
-                                                        <span className="inventory-unit">
-                                                            {item.unitType}
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <span className="inventory-date">
-                                                            {item.lastUpdated
-                                                                ? new Date(
-                                                                      item.lastUpdated
-                                                                  ).toLocaleDateString(
-                                                                      undefined,
-                                                                      {
-                                                                          day: "2-digit",
-                                                                          month: "short",
-                                                                          year: "numeric"
-                                                                      }
-                                                                  )
-                                                                : "-"}
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <span
-                                                            className={`inventory-status ${stockStatus.className}`}
-                                                        >
-                                                            <span />
-                                                            {
-                                                                stockStatus.label
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <div className="inventory-table-actions">
-                                                            <button
-                                                                type="button"
-                                                                className="inventory-edit-button"
-                                                                onClick={() =>
-                                                                    navigate(
-                                                                        `/admin/inventory/edit/${item.itemId}`
-                                                                    )
-                                                                }
+                                                        <td>
+                                                            <span
+                                                                className={`inventory-status ${stockStatus.className}`}
                                                             >
-                                                                Edit
-                                                            </button>
-
-                                                            <button
-                                                                type="button"
-                                                                className="inventory-delete-button"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        item.itemId
-                                                                    )
+                                                                <span />
+                                                                {
+                                                                    stockStatus.label
                                                                 }
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
+                                                            </span>
+                                                        </td>
+
+                                                        <td>
+                                                            <div className="inventory-table-actions">
+                                                                <button
+                                                                    type="button"
+                                                                    className="inventory-edit-button"
+                                                                    onClick={() =>
+                                                                        navigate(
+                                                                            `/admin/inventory/edit/${item.itemId}`
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Edit
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="inventory-delete-button"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            item.itemId
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

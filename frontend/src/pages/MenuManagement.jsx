@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -14,6 +14,7 @@ function MenuManagement() {
 
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     const loadMenu = async () => {
         try {
@@ -24,10 +25,7 @@ function MenuManagement() {
 
             setMenuItems(response.data?.data || []);
         } catch (requestError) {
-            console.error(
-                "Menu loading error:",
-                requestError
-            );
+            console.error("Menu loading error:", requestError);
 
             setError(
                 requestError.response?.data?.message ||
@@ -59,8 +57,8 @@ function MenuManagement() {
 
             await api.delete(`/menu/${menuId}`);
 
-            setMenuItems((current) =>
-                current.filter(
+            setMenuItems((currentItems) =>
+                currentItems.filter(
                     (item) => item.menuId !== menuId
                 )
             );
@@ -69,10 +67,7 @@ function MenuManagement() {
                 "Menu item deleted successfully."
             );
         } catch (requestError) {
-            console.error(
-                "Menu delete error:",
-                requestError
-            );
+            console.error("Menu delete error:", requestError);
 
             setError(
                 requestError.response?.data?.message ||
@@ -96,6 +91,31 @@ function MenuManagement() {
             .map((item) => item.category)
             .filter(Boolean)
     ).size;
+
+    const filteredMenuItems = useMemo(() => {
+        const search = searchTerm.trim().toLowerCase();
+
+        if (!search) {
+            return menuItems;
+        }
+
+        return menuItems.filter((item) => {
+            return (
+                item.name
+                    ?.toLowerCase()
+                    .includes(search) ||
+                item.menuId
+                    ?.toLowerCase()
+                    .includes(search) ||
+                item.category
+                    ?.toLowerCase()
+                    .includes(search) ||
+                item.description
+                    ?.toLowerCase()
+                    .includes(search)
+            );
+        });
+    }, [menuItems, searchTerm]);
 
     if (authLoading) {
         return (
@@ -130,15 +150,12 @@ function MenuManagement() {
                     </h2>
 
                     <p>
-                        Please login to access menu
-                        management.
+                        Please login to access menu management.
                     </p>
 
                     <button
                         type="button"
-                        onClick={() =>
-                            navigate("/login")
-                        }
+                        onClick={() => navigate("/login")}
                     >
                         Go to Login
                     </button>
@@ -160,15 +177,12 @@ function MenuManagement() {
                     </h2>
 
                     <p>
-                        Only administrators can manage
-                        menu items.
+                        Only administrators can manage menu items.
                     </p>
 
                     <button
                         type="button"
-                        onClick={() =>
-                            navigate("/")
-                        }
+                        onClick={() => navigate("/")}
                     >
                         Return Home
                     </button>
@@ -212,14 +226,6 @@ function MenuManagement() {
                         >
                             <span>!</span>
                             {error}
-
-                            <button
-                                type="button"
-                                onClick={loadMenu}
-                                disabled={loading}
-                            >
-                                Try again
-                            </button>
                         </div>
                     )}
 
@@ -311,31 +317,37 @@ function MenuManagement() {
                                 </h2>
 
                                 <p>
-                                    Review and manage your current
-                                    dishes.
+                                    Review and manage your current dishes.
                                 </p>
                             </div>
 
-                            <div>
+                            <div className="menu-list-controls">
+                                <input
+                                    type="text"
+                                    className="menu-search-input"
+                                    placeholder="Search menu..."
+                                    value={searchTerm}
+                                    onChange={(e) =>
+                                        setSearchTerm(e.target.value)
+                                    }
+                                />
+
                                 <button
                                     type="button"
                                     className="menu-primary-button"
                                     onClick={() =>
-                                        navigate(
-                                            "/admin/menu/add"
-                                        )
+                                        navigate("/admin/menu/add")
                                     }
                                 >
-                                    Add Menu Item →
+                                    + Add Menu Item
                                 </button>
-                            </div>
-                        </div>
 
-                        <div className="menu-list-header">
-                            <div>
-                                <span className="menu-item-count">
-                                    {menuItems.length} items
-                                </span>
+                                <div className="menu-item-count">
+                                    {filteredMenuItems.length}{" "}
+                                    {filteredMenuItems.length === 1
+                                        ? "item"
+                                        : "items"}
+                                </div>
                             </div>
                         </div>
 
@@ -359,7 +371,22 @@ function MenuManagement() {
 
                                 <p>
                                     Add your first menu item using
-                                    the Add Menu Item button above.
+                                    the Add Menu Item button.
+                                </p>
+                            </div>
+                        ) : filteredMenuItems.length === 0 ? (
+                            <div className="menu-empty-state">
+                                <div className="menu-empty-icon">
+                                    🔍
+                                </div>
+
+                                <h3>
+                                    No matching menu items
+                                </h3>
+
+                                <p>
+                                    Try searching by item name,
+                                    ID, category or description.
                                 </p>
                             </div>
                         ) : (
@@ -367,108 +394,123 @@ function MenuManagement() {
                                 <table className="menu-table">
                                     <thead>
                                         <tr>
-                                            <th>Menu ID</th>
-                                            <th>Item</th>
-                                            <th>Category</th>
-                                            <th>Price</th>
-                                            <th>Availability</th>
-                                            <th>Actions</th>
+                                            <th>
+                                                Menu ID
+                                            </th>
+
+                                            <th>
+                                                Item
+                                            </th>
+
+                                            <th>
+                                                Category
+                                            </th>
+
+                                            <th>
+                                                Price
+                                            </th>
+
+                                            <th>
+                                                Availability
+                                            </th>
+
+                                            <th>
+                                                Actions
+                                            </th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
-                                        {menuItems.map((item) => (
-                                            <tr
-                                                key={
-                                                    item.menuId
-                                                }
-                                            >
-                                                <td>
-                                                    <span className="menu-id">
-                                                        {
-                                                            item.menuId
-                                                        }
-                                                    </span>
-                                                </td>
-
-                                                <td>
-                                                    <div className="menu-table-item">
-                                                        <strong>
+                                        {filteredMenuItems.map(
+                                            (item) => (
+                                                <tr
+                                                    key={item.menuId}
+                                                >
+                                                    <td>
+                                                        <span className="menu-id">
                                                             {
-                                                                item.name
+                                                                item.menuId
                                                             }
-                                                        </strong>
+                                                        </span>
+                                                    </td>
 
-                                                        {item.description && (
-                                                            <small>
-                                                                {
-                                                                    item.description
+                                                    <td>
+                                                        <div className="menu-table-item">
+                                                            <strong>
+                                                                {item.name}
+                                                            </strong>
+
+                                                            {item.description && (
+                                                                <small>
+                                                                    {
+                                                                        item.description
+                                                                    }
+                                                                </small>
+                                                            )}
+                                                        </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <span className="menu-category">
+                                                            {
+                                                                item.category
+                                                            }
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="menu-price">
+                                                        ₹
+                                                        {Number(
+                                                            item.price
+                                                        ).toFixed(2)}
+                                                    </td>
+
+                                                    <td>
+                                                        <span
+                                                            className={`menu-status ${
+                                                                item.isAvailable
+                                                                    ? "available"
+                                                                    : "unavailable"
+                                                            }`}
+                                                        >
+                                                            <span />
+
+                                                            {item.isAvailable
+                                                                ? "Available"
+                                                                : "Unavailable"}
+                                                        </span>
+                                                    </td>
+
+                                                    <td>
+                                                        <div className="menu-table-actions">
+                                                            <button
+                                                                type="button"
+                                                                className="menu-edit-button"
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/admin/menu/edit/${item.menuId}`
+                                                                    )
                                                                 }
-                                                            </small>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                            >
+                                                                Edit
+                                                            </button>
 
-                                                <td>
-                                                    <span className="menu-category">
-                                                        {
-                                                            item.category
-                                                        }
-                                                    </span>
-                                                </td>
-
-                                                <td className="menu-price">
-                                                    ₹
-                                                    {Number(
-                                                        item.price
-                                                    ).toFixed(2)}
-                                                </td>
-
-                                                <td>
-                                                    <span
-                                                        className={`menu-status ${
-                                                            item.isAvailable
-                                                                ? "available"
-                                                                : "unavailable"
-                                                        }`}
-                                                    >
-                                                        <span />
-
-                                                        {item.isAvailable
-                                                            ? "Available"
-                                                            : "Unavailable"}
-                                                    </span>
-                                                </td>
-
-                                                <td>
-                                                    <div className="menu-table-actions">
-                                                        <button
-                                                            type="button"
-                                                            className="menu-edit-button"
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    `/admin/menu/edit/${item.menuId}`
-                                                                )
-                                                            }
-                                                        >
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            className="menu-delete-button"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    item.menuId
-                                                                )
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                            <button
+                                                                type="button"
+                                                                className="menu-delete-button"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        item.menuId
+                                                                    )
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
