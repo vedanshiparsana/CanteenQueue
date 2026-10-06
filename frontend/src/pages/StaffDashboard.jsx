@@ -56,11 +56,13 @@ function StaffDashboard() {
     const [activeSection, setActiveSection] = useState("dashboard");
     const [orders, setOrders] = useState([]);
     const [menuItems, setMenuItems] = useState([]);
+    const [pickupSlots, setPickupSlots] = useState([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
     const [menuLoading, setMenuLoading] = useState(true);
     const [error, setError] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [orderKindFilter, setOrderKindFilter] = useState("All");
+    const [pickupSlotFilter, setPickupSlotFilter] = useState("All");
     const [search, setSearch] = useState("");
     const [menuSearch, setMenuSearch] = useState("");
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -115,14 +117,33 @@ function StaffDashboard() {
         }
     }, []);
 
+    const loadPickupSlots = useCallback(async () => {
+        try {
+            const response = await api.get("/pickup-slots");
+            if (response.data?.success && Array.isArray(response.data.slots)) {
+                setPickupSlots(response.data.slots);
+                return;
+            }
+            throw new Error(response.data?.message || "Unable to load pickup slots.");
+        } catch (loadError) {
+            console.error("Staff dashboard pickup slots error:", loadError);
+            setError(
+                loadError.response?.data?.message ||
+                loadError.message ||
+                "Unable to load pickup slots."
+            );
+        }
+    }, []);
+
     useEffect(() => {
         if (!authLoading && user?.role === "staff") {
             Promise.resolve().then(() => {
                 loadOrders();
                 loadMenu();
+                loadPickupSlots();
             });
         }
-    }, [authLoading, user, loadOrders, loadMenu]);
+    }, [authLoading, user, loadOrders, loadMenu, loadPickupSlots]);
 
     useEffect(() => {
         if (authLoading || user?.role !== "staff") return undefined;
@@ -153,6 +174,10 @@ function StaffDashboard() {
             const kindMatches =
                 orderKindFilter === "All" ||
                 (order.isGroupOrder ? "Group" : "Normal") === orderKindFilter;
+            const slot = getSlot(order);
+            const slotMatches =
+                pickupSlotFilter === "All" ||
+                String(slot?._id || "") === pickupSlotFilter;
             const searchMatches =
                 !normalizedSearch ||
                 [
@@ -162,9 +187,9 @@ function StaffDashboard() {
                 ].some((value) =>
                     String(value || "").toLowerCase().includes(normalizedSearch)
                 );
-            return statusMatches && kindMatches && searchMatches;
+            return statusMatches && kindMatches && slotMatches && searchMatches;
         });
-    }, [orders, statusFilter, orderKindFilter, search]);
+    }, [orders, statusFilter, orderKindFilter, pickupSlotFilter, search]);
 
     const pickupGroups = useMemo(() => {
         const readyOrders = orders.filter((order) => order.orderStatus === "Ready");
@@ -401,14 +426,27 @@ function StaffDashboard() {
                     ))}
                 </div>
                 {detailed && (
-                    <label className="staff-select-label">
-                        Order type
-                        <select value={orderKindFilter} onChange={(event) => setOrderKindFilter(event.target.value)}>
-                            <option>All</option>
-                            <option>Normal</option>
-                            <option>Group</option>
-                        </select>
-                    </label>
+                    <>
+                        <label className="staff-select-label">
+                            Order type
+                            <select value={orderKindFilter} onChange={(event) => setOrderKindFilter(event.target.value)}>
+                                <option>All</option>
+                                <option>Normal</option>
+                                <option>Group</option>
+                            </select>
+                        </label>
+                        <label className="staff-select-label">
+                            Pickup slot
+                            <select value={pickupSlotFilter} onChange={(event) => setPickupSlotFilter(event.target.value)}>
+                                <option value="All">All slots</option>
+                                {pickupSlots.map((slot) => (
+                                    <option value={slot._id} key={slot._id}>
+                                        {formatDate(slot.date)} · {formatTime(slot.startTime)}–{formatTime(slot.endTime)}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </>
                 )}
             </div>
             {detailed && (
@@ -426,7 +464,7 @@ function StaffDashboard() {
             {ordersLoading ? (
                 <div className="staff-empty"><span className="staff-loader" /><p>Loading orders...</p></div>
             ) : filteredOrders.length ? (
-                <div className="staff-order-grid">
+                <div className={`staff-order-grid${detailed ? " staff-order-grid-scrollable" : ""}`}>
                     {filteredOrders.map((order) => renderOrderCard(order, detailed))}
                 </div>
             ) : (

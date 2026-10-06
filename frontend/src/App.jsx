@@ -11,6 +11,7 @@ import InventoryAlerts from "./pages/InventoryAlerts";
 import InventoryForm from "./pages/InventoryForm";
 import MenuItemForm from "./pages/menuitemForm";
 import SalesAnalytics from "./pages/SalesAnalytics";
+import PickupSlotManagement from "./pages/PickupSlotManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentDashboard from "./pages/StudentDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
@@ -128,6 +129,15 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <SalesAnalytics />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/pickup-slots"
+                element={
+                    <ProtectedRoute>
+                        <PickupSlotManagement />
                     </ProtectedRoute>
                 }
             />

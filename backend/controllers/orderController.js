@@ -10,6 +10,7 @@ const {
     reservePickupSlot,
     releasePickupSlot
 } = require("../utils/pickupSlotReservation");
+const { sendOrderStatusNotification } = require("../config/socket");
 
 
 // =========================================================
@@ -782,6 +783,9 @@ const updateOrderStatus = async (
                 )
             );
 
+        if (previousStatus !== status) {
+            sendOrderStatusNotification(order, status);
+        }
 
         return res.json({
 

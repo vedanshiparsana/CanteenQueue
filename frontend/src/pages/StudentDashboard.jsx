@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 import StudentSidebar from "../components/StudentSidebar";
 import api from "../services/api";
@@ -43,6 +44,9 @@ function StudentDashboard() {
     const [group, setGroup] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [groupDetailsOpen, setGroupDetailsOpen] = useState(false);
+    const [realtimeNotifications, setRealtimeNotifications] = useState([]);
+    const notificationTimers = useRef(new Map());
+    const nextNotificationId = useRef(0);
 
     // =========================================================
     // UI STATE
@@ -50,6 +54,7 @@ function StudentDashboard() {
 
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
+    const [orderSearch, setOrderSearch] = useState("");
 
     const [selectedPickupSlot, setSelectedPickupSlot] = useState("");
 
@@ -287,6 +292,80 @@ function StudentDashboard() {
         }
     };
 
+    useEffect(() => {
+        if (String(user?.role || "").toLowerCase() !== "student") {
+            return undefined;
+        }
+
+        const token = localStorage.getItem("token");
+        if (!token) return undefined;
+
+        const socketUrl = api.defaults.baseURL.replace(/\/api\/?$/, "");
+        const socket = io(socketUrl, {
+            auth: { token }
+        });
+
+        const handleNotification = (notification = {}) => {
+            const id = `${Date.now()}-${nextNotificationId.current++}`;
+            const entry = {
+                id,
+                title: notification.title || "Order update",
+                message: notification.message || "Your order has been updated.",
+                type: notification.type || "order-status",
+                orderId: notification.orderId
+            };
+
+            setRealtimeNotifications((current) => [
+                ...current.slice(-2),
+                entry
+            ]);
+
+            const timer = window.setTimeout(() => {
+                setRealtimeNotifications((current) =>
+                    current.filter((item) => item.id !== id)
+                );
+                notificationTimers.current.delete(id);
+            }, 8000);
+            notificationTimers.current.set(id, timer);
+        };
+
+        const handleOrderStatusUpdate = (update = {}) => {
+            if (!update.orderId || !update.orderStatus) return;
+            setOrders((current) => current.map((order) =>
+                order.orderId === update.orderId
+                    ? { ...order, orderStatus: update.orderStatus }
+                    : order
+            ));
+            setSelectedOrder((current) =>
+                current?.orderId === update.orderId
+                    ? { ...current, orderStatus: update.orderStatus }
+                    : current
+            );
+        };
+
+        socket.on("notification:new", handleNotification);
+        socket.on("order:statusUpdated", handleOrderStatusUpdate);
+        socket.on("connect_error", (error) => {
+            console.error("Student notification connection error:", error.message);
+        });
+
+        const activeNotificationTimers = notificationTimers.current;
+        return () => {
+            socket.disconnect();
+            activeNotificationTimers.forEach((timer) => window.clearTimeout(timer));
+            activeNotificationTimers.clear();
+        };
+    }, [user?.userId, user?.role]);
+
+    const dismissRealtimeNotification = (id) => {
+        const timer = notificationTimers.current.get(id);
+        if (timer) window.clearTimeout(timer);
+        notificationTimers.current.delete(id);
+        setRealtimeNotifications((current) =>
+            current.filter((notification) => notification.id !== id)
+        );
+    };
+
     // =========================================================
     // PICKUP SLOTS
     // GET /pickup-slots/today
@@ -413,16 +492,18 @@ function StudentDashboard() {
     // =========================================================
 
     const categories = useMemo(() => {
-        const uniqueCategories = [
-            ...new Set(
-                menu
-                    .map(
-                        (item) =>
-                            item.category
-                    )
-                    .filter(Boolean)
-            )
-        ];
+        const seenCategories = new Set();
+        const uniqueCategories = menu.reduce((result, item) => {
+            const categoryName = String(item.category || "").trim();
+            const categoryKey = categoryName.toLowerCase();
+
+            if (categoryName && !seenCategories.has(categoryKey)) {
+                seenCategories.add(categoryKey);
+                result.push(categoryName);
+            }
+
+            return result;
+        }, []);
 
         return [
             "All",
@@ -448,7 +529,7 @@ function StudentDashboard() {
                 ).toLowerCase();
 
             const itemCategory =
-                getMenuCategory(item);
+                getMenuCategory(item).trim().toLowerCase();
 
             const matchesSearch =
                 !searchText ||
@@ -459,7 +540,7 @@ function StudentDashboard() {
 
             const matchesCategory =
                 category === "All" ||
-                itemCategory === category;
+                itemCategory === category.trim().toLowerCase();
 
             return (
                 matchesSearch &&
@@ -1527,13 +1608,14 @@ function StudentDashboard() {
                     <input type="text" placeholder="Search food or ingredients..." value={search} onChange={(event) => setSearch(event.target.value)} />
                     {search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search">×</button>}
                 </label>
-                <div className="student-category-list">
-                    {categories.map((item) => (
-                        <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>
-                            {item}
-                        </button>
-                    ))}
-                </div>
+                <label className="student-category-select">
+                    <span>Category</span>
+                    <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                        {categories.map((item) => (
+                            <option value={item} key={item}>{item}</option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {initialLoading ? (
@@ -1654,6 +1736,25 @@ function StudentDashboard() {
         const activeOrder = orders.find((order) => !["Completed", "Cancelled"].includes(order.orderStatus));
         const selected = selectedOrder || activeOrder;
         const statusSteps = ["Received", "Preparing", "Ready", "Completed"];
+        const orderSearchText = orderSearch.trim().toLowerCase();
+        const visibleOrders = orders.filter((order) => {
+            if (!orderSearchText) return true;
+
+            const searchableFields = [
+                order.orderId,
+                order.orderStatus,
+                order.paymentStatus,
+                order.groupCode,
+                order.isGroupOrder ? "group order" : "normal order",
+                getPickupLabel(order),
+                order.createdAt,
+                ...(order.items || []).map((item) => item.menuId?.name)
+            ];
+
+            return searchableFields.some((value) =>
+                String(value || "").toLowerCase().includes(orderSearchText)
+            );
+        });
 
         return (
             <div className="student-content">
@@ -1674,7 +1775,18 @@ function StudentDashboard() {
                                 <h2>{selected.orderId}</h2>
                                 <p>{selected.orderStatus === "AwaitingPayment" ? "Awaiting payment — order not confirmed" : `${selected.orderStatus} · ${getPickupLabel(selected)}`}</p>
                             </div>
-                            <span className={`student-status ${selected.orderStatus === "Cancelled" ? "cancelled" : ""}`}>{selected.orderStatus}</span>
+                            <div className="student-order-detail-heading-actions">
+                                {selectedOrder && (
+                                    <button
+                                        type="button"
+                                        className="student-secondary-action"
+                                        onClick={() => setSelectedOrder(null)}
+                                    >
+                                        ← All orders
+                                    </button>
+                                )}
+                                <span className={`student-status ${selected.orderStatus === "Cancelled" ? "cancelled" : ""}`}>{selected.orderStatus}</span>
+                            </div>
                         </div>
 
                         <div className="student-order-progress">
@@ -1779,16 +1891,29 @@ function StudentDashboard() {
 
                 {orders.length === 0 ? (
                     renderEmptyState("▣", "No orders yet", "Your completed and active orders will appear here.", <button type="button" className="student-primary-action" onClick={() => setActiveSection("order")}>Order your first meal →</button>)
-                ) : (
+                ) : !selectedOrder && (
                     <section className="student-order-list">
                         <div className="student-section-title-row">
                             <div>
                                 <span className="student-eyebrow">HISTORY</span>
                                 <h2>All orders</h2>
                             </div>
-                            <span className="student-list-count">{orders.length} total</span>
+                            <span className="student-list-count">{visibleOrders.length} of {orders.length} orders</span>
                         </div>
-                        {orders.map((order) => (
+                        <label className="student-orders-search">
+                            <span aria-hidden="true">⌕</span>
+                            <input
+                                type="search"
+                                value={orderSearch}
+                                onChange={(event) => setOrderSearch(event.target.value)}
+                                placeholder="Search order ID, status, item, group code, or pickup"
+                                aria-label="Search orders by order ID, status, item, group code, or pickup"
+                            />
+                            {orderSearch && (
+                                <button type="button" onClick={() => setOrderSearch("")} aria-label="Clear order search">×</button>
+                            )}
+                        </label>
+                        {visibleOrders.length ? visibleOrders.map((order) => (
                             <article className={`student-order-card ${selectedOrder?.orderId === order.orderId ? "selected" : ""}`} key={order._id || order.orderId}>
                                 <div className="student-order-card-main">
                                     <div className="student-order-id-wrap">
@@ -1814,7 +1939,11 @@ function StudentDashboard() {
                                     </div>
                                 </div>
                             </article>
-                        ))}
+                        )) : (
+                            <div className="student-orders-no-results">
+                                No orders match “{orderSearch}”. Try another search.
+                            </div>
+                        )}
                     </section>
                 )}
             </div>
@@ -2477,6 +2606,40 @@ function StudentDashboard() {
                     setActiveSection
                 }
             />
+
+            {realtimeNotifications.length > 0 && (
+                <div className="student-realtime-notifications" aria-live="polite" aria-relevant="additions">
+                    {realtimeNotifications.map((notification) => (
+                        <article
+                            className={`student-realtime-toast student-realtime-toast-${notification.type}`}
+                            key={notification.id}
+                            role="status"
+                        >
+                            <span className="student-realtime-toast-icon" aria-hidden="true">
+                                {notification.type === "pickup-reminder"
+                                    ? "◷"
+                                    : notification.status === "Ready"
+                                        ? "✓"
+                                        : notification.status === "Preparing"
+                                            ? "↗"
+                                            : "•"}
+                            </span>
+                            <div className="student-realtime-toast-copy">
+                                <strong>{notification.title}</strong>
+                                <p>{notification.message}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => dismissRealtimeNotification(notification.id)}
+                                aria-label="Dismiss notification"
+                            >
+                                ×
+                            </button>
+                            <span className="student-realtime-toast-progress" />
+                        </article>
+                    ))}
+                </div>
+            )}
 
             <main className="student-main">
 

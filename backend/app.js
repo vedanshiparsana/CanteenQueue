@@ -19,7 +19,9 @@ const pickupSlotRoutes = require("./routes/pickupSlotRoutes");
 
 const http = require("http");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 const { setIO } = require("./config/socket");
+const { sendPickupReminders } = require("./controllers/notificationController");
 
 const app = express();
 const server = http.createServer(app);
@@ -32,7 +34,28 @@ const io = new Server(server, {
 
 setIO(io);
 
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+
+    if (!token || !process.env.JWT_SECRET) {
+        return next(new Error("Authentication required"));
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!decoded.id) {
+            return next(new Error("Invalid authentication token"));
+        }
+
+        socket.data.userId = String(decoded.id);
+        return next();
+    } catch {
+        return next(new Error("Invalid or expired authentication token"));
+    }
+});
+
 io.on("connection", (socket) => {
+    socket.join(`user:${socket.data.userId}`);
     console.log("User connected:", socket.id);
 
     socket.on("disconnect", () => {
@@ -63,6 +86,9 @@ app.use("/api/pickup-slots", pickupSlotRoutes);
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
+    sendPickupReminders();
+    setInterval(sendPickupReminders, 60 * 1000);
+
     server.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });

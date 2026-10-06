@@ -585,6 +585,29 @@
     gap: 15px;
 }
 
+.staff-order-grid-scrollable {
+    max-height: min(68vh, 760px);
+    overflow-y: auto;
+    align-content: start;
+    padding: 2px 8px 14px 2px;
+    scrollbar-gutter: stable;
+}
+
+.staff-order-grid-scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.staff-order-grid-scrollable::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: #cbd7ca;
+    background-clip: padding-box;
+}
+
+.staff-order-grid-scrollable::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .staff-order-card {
     min-width: 0;
     padding: 19px;
@@ -2215,7 +2238,27 @@
 
 .staff-live-lane-orders {
     display: grid;
+    max-height: 780px;
     gap: 11px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 2px 7px 8px 2px;
+    scrollbar-gutter: stable;
+}
+
+.staff-live-lane-orders::-webkit-scrollbar {
+    width: 8px;
+}
+
+.staff-live-lane-orders::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: #cbd7ca;
+    background-clip: padding-box;
+}
+
+.staff-live-lane-orders::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .staff-live-order-card {

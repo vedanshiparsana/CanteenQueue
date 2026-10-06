@@ -118,6 +118,30 @@ function AdminSidebar() {
                 </svg>
             ),
         },
+        {
+            id: "pickup-slots",
+            label: "Pickup Slots",
+            path: "/admin/pickup-slots",
+            icon: (
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect
+                        x="3.5"
+                        y="5"
+                        width="17"
+                        height="15.5"
+                        rx="2"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                    />
+                    <path
+                        d="M7.5 3.5v3M16.5 3.5v3M3.5 9h17M8 13h2m4 0h2m-8 3h2"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                    />
+                </svg>
+            ),
+        },
     ];
 
     const isActive = (path) => {
