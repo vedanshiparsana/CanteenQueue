@@ -15,6 +15,7 @@ import MenuItemForm from "./pages/menuitemForm";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentDashboard from "./pages/StudentDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
 
 function App() {
     return (
@@ -45,6 +46,15 @@ function App() {
                 element={
                     <ProtectedRoute>
                         <StudentDashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/staff"
+                element={
+                    <ProtectedRoute>
+                        <StaffDashboard />
                     </ProtectedRoute>
                 }
             />

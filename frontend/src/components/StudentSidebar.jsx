@@ -9,6 +9,7 @@ function StudentSidebar({ activeSection, setActiveSection }) {
             id: "home",
             icon: "⌂",
             label: "Home"
+            
         },
         {
             id: "order",

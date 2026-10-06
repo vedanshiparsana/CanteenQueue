@@ -7,6 +7,16 @@ import "../styles/components/Footer.css";
 
 function Home() {
     const navigate = useNavigate();
+    const loginForSection = (section) => {
+        navigate("/login", {
+            state: {
+                returnTo: {
+                    section
+                }
+            }
+        });
+    };
+
     return (
         <div className="home-page">
 
@@ -493,7 +503,7 @@ function Home() {
                                 the payment from their own wallet.
                             </p>
 
-                            <Button variant="secondary" onClick={() => {document.getElementById("group-order")?.scrollIntoView({behavior: "smooth"});}}>
+                            <Button variant="secondary" onClick={() => loginForSection("groups")}>
                                 Start a group order →
                             </Button>
 
@@ -696,7 +706,7 @@ function Home() {
                                 <a href="/register" onClick={(e) => {e.preventDefault();navigate("/register");}}>
                                     Create account
                                 </a>
-                                <a href="/login" onClick={(e) => {e.preventDefault();navigate("/login");}}>
+                                <a href="/login" onClick={(e) => {e.preventDefault();loginForSection("orders");}}>
                                      My orders
                                 </a>
                             </div>

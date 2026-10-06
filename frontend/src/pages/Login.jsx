@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/pages/Auth.css";
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -44,10 +45,20 @@ const Login = () => {
                 const role = String(data.user?.role || "").toLowerCase();
                 const destination = role === "admin"
                     ? "/admin"
-                    : role === "student"
-                        ? "/student"
-                        : "/";
-                navigate(destination, { replace: true });
+                    : role === "staff"
+                        ? "/staff"
+                        : role === "student"
+                            ? "/student"
+                            : "/";
+                const requestedSection = location.state?.returnTo?.section;
+                const section = role === "student" &&
+                    ["groups", "orders"].includes(requestedSection)
+                    ? requestedSection
+                    : undefined;
+                navigate(destination, {
+                    replace: true,
+                    state: section ? { section } : undefined
+                });
             } else {
                 setError(data.message || "Login failed.");
             }

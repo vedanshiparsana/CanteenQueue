@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import StudentSidebar from "../components/StudentSidebar";
 import api from "../services/api";
@@ -16,12 +16,15 @@ import "../styles/pages/StudentDashboard.css";
 
 function StudentDashboard() {
     const { user, updateUser, loading: authLoading } = useAuth();
+    const location = useLocation();
 
     // =========================================================
     // MAIN SECTION
     // =========================================================
 
-    const [activeSection, setActiveSection] = useState("home");
+    const [activeSection, setActiveSection] = useState(
+        location.state?.section || "home"
+    );
 
     // =========================================================
     // BACKEND DATA
