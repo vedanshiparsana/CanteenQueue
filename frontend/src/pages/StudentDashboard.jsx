@@ -54,6 +54,8 @@ function StudentDashboard() {
 
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("All");
+    const [groupSearch, setGroupSearch] = useState("");
+    const [groupCategory, setGroupCategory] = useState("All");
     const [orderSearch, setOrderSearch] = useState("");
 
     const [selectedPickupSlot, setSelectedPickupSlot] = useState("");
@@ -552,6 +554,23 @@ function StudentDashboard() {
         search,
         category
     ]);
+
+    const filteredGroupMenu = useMemo(() => {
+        const searchText = groupSearch.trim().toLowerCase();
+
+        return menu.filter((item) => {
+            const itemCategory = getMenuCategory(item).trim().toLowerCase();
+            const matchesSearch =
+                !searchText ||
+                getMenuName(item).toLowerCase().includes(searchText) ||
+                getMenuDescription(item).toLowerCase().includes(searchText);
+            const matchesCategory =
+                groupCategory === "All" ||
+                itemCategory === groupCategory.trim().toLowerCase();
+
+            return isMenuAvailable(item) && matchesSearch && matchesCategory;
+        });
+    }, [menu, groupSearch, groupCategory]);
 
     // =========================================================
     // GET CART ITEM ID
@@ -1733,8 +1752,7 @@ function StudentDashboard() {
     // =========================================================
 
     const renderOrders = () => {
-        const activeOrder = orders.find((order) => !["Completed", "Cancelled"].includes(order.orderStatus));
-        const selected = selectedOrder || activeOrder;
+        const selected = selectedOrder;
         const statusSteps = ["Received", "Preparing", "Ready", "Completed"];
         const orderSearchText = orderSearch.trim().toLowerCase();
         const visibleOrders = orders.filter((order) => {
@@ -2116,7 +2134,7 @@ function StudentDashboard() {
                     </div>
                 </div>
 
-                <section className="student-group-start">
+                {!groupDetailsOpen && <section className="student-group-start">
                     <div className="student-group-start-card create">
                         <div className="student-feature-icon">＋</div>
                         <div>
@@ -2153,9 +2171,9 @@ function StudentDashboard() {
                             </button>
                         </div>
                     </div>
-                </section>
+                </section>}
 
-                <section className="student-groups-list-section">
+                {!groupDetailsOpen && <section className="student-groups-list-section">
                     <div className="student-section-title-row">
                         <div>
                             <span className="student-eyebrow">YOUR GROUPS</span>
@@ -2212,7 +2230,7 @@ function StudentDashboard() {
                             })}
                         </div>
                     )}
-                </section>
+                </section>}
 
                 {group && groupDetailsOpen && (
                     <section className="student-group-workspace">
@@ -2223,7 +2241,7 @@ function StudentDashboard() {
                                 <p>{groupMembers.length} {groupMembers.length === 1 ? "member" : "members"} · ₹{Number(group.totalAmount || 0).toFixed(2)} total</p>
                             </div>
                             <div className="student-group-overview-actions">
-                                <button type="button" className="student-secondary-action" onClick={() => setGroupDetailsOpen(false)}>← Close</button>
+                                <button type="button" className="student-secondary-action" onClick={() => setGroupDetailsOpen(false)}>← All groups</button>
                             </div>
                         </div>
 
@@ -2276,20 +2294,61 @@ function StudentDashboard() {
 
                                 {group.status === "Open" && !groupPaymentsStarted ? (
                                     <>
-                                        <div className="student-group-menu">
-                                            {menu.filter(isMenuAvailable).map((item) => {
-                                                const menuId = getMenuId(item);
-                                                const pendingQuantity = Number(pendingGroupItems[menuId] || 0);
-
-                                                return (
-                                                    <button type="button" key={menuId} disabled={loading} onClick={() => addGroupItem(menuId)} className={pendingQuantity > 0 ? "has-pending" : ""}>
-                                                        <span>🍴</span>
-                                                        <div><strong>{getMenuName(item)}</strong><small>₹{getMenuPrice(item).toFixed(2)}{pendingQuantity > 0 ? ` · ${pendingQuantity} pending` : ""}</small></div>
-                                                        <b>+</b>
-                                                    </button>
-                                                );
-                                            })}
+                                        <div className="student-menu-toolbar">
+                                            <label className="student-search-box">
+                                                <span>⌕</span>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search food or ingredients..."
+                                                    value={groupSearch}
+                                                    onChange={(event) => setGroupSearch(event.target.value)}
+                                                />
+                                                {groupSearch && <button type="button" onClick={() => setGroupSearch("")} aria-label="Clear search">×</button>}
+                                            </label>
+                                            <label className="student-category-select">
+                                                <span>Category</span>
+                                                <select value={groupCategory} onChange={(event) => setGroupCategory(event.target.value)}>
+                                                    {categories.map((item) => (
+                                                        <option value={item} key={item}>{item}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
                                         </div>
+
+                                        {filteredGroupMenu.length === 0 ? (
+                                            <div className="student-group-empty">
+                                                No available items matched. Try another search or category.
+                                                {(groupSearch || groupCategory !== "All") && (
+                                                    <button type="button" className="student-text-button" onClick={() => { setGroupSearch(""); setGroupCategory("All"); }}>
+                                                        Reset filters
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="student-menu-grid student-group-menu-grid">
+                                                {filteredGroupMenu.map((item) => {
+                                                    const menuId = getMenuId(item);
+                                                    const pendingQuantity = Number(pendingGroupItems[menuId] || 0);
+
+                                                    return (
+                                                        <article className="student-food-card" key={menuId}>
+                                                            <div className="student-food-icon">🍽️</div>
+                                                            <div className="student-food-info">
+                                                                <span className="student-food-category">{getMenuCategory(item) || "Canteen"}</span>
+                                                                <h3>{getMenuName(item)}</h3>
+                                                                <p>{getMenuDescription(item) || "A campus favourite made fresh for you."}</p>
+                                                            </div>
+                                                            <div className="student-food-bottom">
+                                                                <strong>₹{getMenuPrice(item).toFixed(2)}</strong>
+                                                                <button type="button" disabled={loading} onClick={() => addGroupItem(menuId)}>
+                                                                    {pendingQuantity > 0 ? `Add · ${pendingQuantity} selected` : "Add to basket"}
+                                                                </button>
+                                                            </div>
+                                                        </article>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
 
                                         {pendingEntries.length > 0 && (
                                             <div className="student-group-pending">
