@@ -1261,6 +1261,7 @@ const cancelOrder = async (
         }
 
         let refundedShares = 0;
+        let refundedAmount = 0;
         if (order.isGroupOrder) {
             const paidShares = order.memberPayments.filter(
                 payment => payment.paid && !payment.refunded && payment.amount > 0
@@ -1346,6 +1347,55 @@ const cancelOrder = async (
                     { $set: { paymentStatus: "refunded" } }
                 );
             }
+        } else if (order.paymentStatus === "paid") {
+            const refundClaim = await Order.updateOne(
+                {
+                    _id: order._id,
+                    orderStatus: "Cancelled",
+                    paymentStatus: "paid"
+                },
+                {
+                    $set: { paymentStatus: "refunded" }
+                }
+            );
+
+            if (refundClaim.modifiedCount === 1) {
+                let walletCredited = false;
+                try {
+                    const refundedUser = await User.findByIdAndUpdate(
+                        order.userId,
+                        { $inc: { wallet: order.totalAmount } },
+                        { new: true }
+                    );
+
+                    if (!refundedUser) {
+                        throw new Error("The student account was not found for a refund.");
+                    }
+                    walletCredited = true;
+
+                    await Transaction.create({
+                        transactionId: randomUUID(),
+                        userId: order.userId,
+                        orderId: order._id,
+                        amount: order.totalAmount,
+                        paymentMethod: "refund"
+                    });
+                    refundedAmount = order.totalAmount;
+                } catch (refundError) {
+                    if (walletCredited) {
+                        await User.updateOne(
+                            { _id: order.userId },
+                            { $inc: { wallet: -order.totalAmount } }
+                        );
+                    }
+
+                    await Order.updateOne(
+                        { _id: order._id, paymentStatus: "refunded" },
+                        { $set: { paymentStatus: "paid" } }
+                    );
+                    throw refundError;
+                }
+            }
         }
 
 
@@ -1371,7 +1421,9 @@ const cancelOrder = async (
 
             message: order.isGroupOrder
                 ? `Group order cancelled. ${refundedShares} member share${refundedShares === 1 ? "" : "s"} refunded.`
-                : "Order cancelled successfully.",
+                : refundedAmount > 0
+                    ? `Order cancelled successfully. ₹${refundedAmount.toFixed(2)} refunded to your wallet.`
+                    : "Order cancelled successfully.",
 
             data:
                 updatedOrder
